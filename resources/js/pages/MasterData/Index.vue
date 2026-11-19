@@ -279,504 +279,839 @@ const setTahunAktif = (t: TahunPelajaran) => {
 
 <template>
     <Head title="Manajemen Data Master" />
-        <div class="space-y-6 max-w-6xl mx-auto">
-            <!-- Header Section -->
-            <div class="bg-white p-6 rounded-xl border border-slate-200/80 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div class="mx-auto max-w-6xl space-y-6">
+        <!-- Header Section -->
+        <div
+            class="flex flex-col justify-between gap-4 rounded-xl border border-slate-200/80 bg-white p-6 shadow-xs sm:flex-row sm:items-center"
+        >
+            <div>
+                <h1
+                    class="flex items-center gap-2 text-xl font-black tracking-tight text-blue-950 uppercase"
+                >
+                    <Database class="h-6 w-6 text-amber-500" />
+                    Manajemen Data Master Akademik
+                </h1>
+                <p class="mt-1 text-xs text-slate-500">
+                    Kelola data referensi utama sistem: Jurusan (Konsentrasi
+                    Keahlian), Mata Pelajaran, Ekstrakurikuler, dan Tahun
+                    Pelajaran.
+                </p>
+            </div>
+        </div>
+
+        <!-- Tabs Navigasi Master Data -->
+        <div
+            class="flex flex-wrap gap-2 rounded-xl bg-slate-200/60 p-1.5 text-xs font-bold sm:flex-nowrap"
+        >
+            <button
+                type="button"
+                :class="[
+                    'flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg px-4 py-2.5 transition-all',
+                    activeTab === 'jurusan'
+                        ? 'bg-blue-600 text-white shadow-xs'
+                        : 'text-slate-700 hover:bg-white/60',
+                ]"
+                @click="activeTab = 'jurusan'"
+            >
+                <Layers class="h-4 w-4" />
+                <span>Konsentrasi Keahlian (Jurusan)</span>
+            </button>
+
+            <button
+                type="button"
+                :class="[
+                    'flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg px-4 py-2.5 transition-all',
+                    activeTab === 'mapel'
+                        ? 'bg-blue-600 text-white shadow-xs'
+                        : 'text-slate-700 hover:bg-white/60',
+                ]"
+                @click="activeTab = 'mapel'"
+            >
+                <BookOpen class="h-4 w-4" />
+                <span>Mata Pelajaran (Mapel)</span>
+            </button>
+
+            <button
+                type="button"
+                :class="[
+                    'flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg px-4 py-2.5 transition-all',
+                    activeTab === 'ekskul'
+                        ? 'bg-blue-600 text-white shadow-xs'
+                        : 'text-slate-700 hover:bg-white/60',
+                ]"
+                @click="activeTab = 'ekskul'"
+            >
+                <Activity class="h-4 w-4" />
+                <span>Ekstrakurikuler</span>
+            </button>
+
+            <button
+                type="button"
+                :class="[
+                    'flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg px-4 py-2.5 transition-all',
+                    activeTab === 'tahun'
+                        ? 'bg-blue-600 text-white shadow-xs'
+                        : 'text-slate-700 hover:bg-white/60',
+                ]"
+                @click="activeTab = 'tahun'"
+            >
+                <Calendar class="h-4 w-4" />
+                <span>Tahun Pelajaran</span>
+            </button>
+        </div>
+
+        <!-- ================= TAB 1: KONSENTRASI KEAHLIAN (JURUSAN) ================= -->
+        <div
+            v-if="activeTab === 'jurusan'"
+            class="overflow-hidden rounded-xl border border-slate-200/80 bg-white shadow-xs"
+        >
+            <div
+                class="flex items-center justify-between border-b border-slate-200 p-4 sm:p-5"
+            >
                 <div>
-                    <h1 class="text-xl font-black text-blue-950 uppercase tracking-tight flex items-center gap-2">
-                        <Database class="w-6 h-6 text-amber-500" />
-                        Manajemen Data Master Akademik
-                    </h1>
-                    <p class="text-xs text-slate-500 mt-1">
-                        Kelola data referensi utama sistem: Jurusan (Konsentrasi Keahlian), Mata Pelajaran, Ekstrakurikuler, dan Tahun Pelajaran.
+                    <h2
+                        class="text-sm font-bold tracking-wide text-slate-900 uppercase"
+                    >
+                        Daftar Konsentrasi Keahlian (Jurusan)
+                    </h2>
+                    <p class="text-xs text-slate-500">
+                        Kunci pencocokan kolom
+                        <strong>kode_jurusan</strong> pada Excel.
                     </p>
                 </div>
-            </div>
-
-            <!-- Tabs Navigasi Master Data -->
-            <div class="flex flex-wrap sm:flex-nowrap gap-2 bg-slate-200/60 p-1.5 rounded-xl text-xs font-bold">
-                <button
-                    type="button"
-                    :class="[
-                        'flex-1 py-2.5 px-4 rounded-lg transition-all flex items-center justify-center gap-2 cursor-pointer',
-                        activeTab === 'jurusan' ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-700 hover:bg-white/60',
-                    ]"
-                    @click="activeTab = 'jurusan'"
-                >
-                    <Layers class="w-4 h-4" />
-                    <span>Konsentrasi Keahlian (Jurusan)</span>
-                </button>
 
                 <button
                     type="button"
-                    :class="[
-                        'flex-1 py-2.5 px-4 rounded-lg transition-all flex items-center justify-center gap-2 cursor-pointer',
-                        activeTab === 'mapel' ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-700 hover:bg-white/60',
-                    ]"
-                    @click="activeTab = 'mapel'"
+                    class="inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-blue-600 px-3.5 py-2 text-xs font-bold text-white shadow-xs transition-all hover:bg-blue-700"
+                    @click="openCreateJurusan"
                 >
-                    <BookOpen class="w-4 h-4" />
-                    <span>Mata Pelajaran (Mapel)</span>
+                    <Plus class="h-4 w-4" />
+                    <span>+ Tambah Jurusan</span>
                 </button>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full border-collapse text-left text-xs">
+                    <thead
+                        class="bg-blue-900 text-[11px] font-bold text-white uppercase"
+                    >
+                        <tr>
+                            <th class="w-12 px-4 py-3 text-center">No</th>
+                            <th class="w-32 px-4 py-3">Kode Singkat</th>
+                            <th class="px-4 py-3">Nama Konsentrasi Keahlian</th>
+                            <th class="px-4 py-3">Program & Bidang Keahlian</th>
+                            <th class="w-28 px-4 py-3 text-right">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-200">
+                        <tr
+                            v-for="(j, idx) in jurusanList"
+                            :key="j.id"
+                            class="hover:bg-blue-50/50"
+                        >
+                            <td
+                                class="px-4 py-2.5 text-center font-bold text-slate-500"
+                            >
+                                {{ idx + 1 }}
+                            </td>
+                            <td
+                                class="px-4 py-2.5 font-mono font-bold text-blue-900"
+                            >
+                                {{ j.kode_singkat }}
+                            </td>
+                            <td class="px-4 py-2.5 font-bold text-slate-900">
+                                {{ j.nama_konsentrasi }}
+                            </td>
+                            <td class="px-4 py-2.5 text-slate-600">
+                                {{ j.program_keahlian?.nama_program_keahlian }}
+                                <span class="block text-[10px] text-slate-400">
+                                    Bidang:
+                                    {{
+                                        j.program_keahlian?.bidang_studi
+                                            ?.nama_bidang_studi
+                                    }}
+                                </span>
+                            </td>
+                            <td
+                                class="px-4 py-2.5 text-right whitespace-nowrap"
+                            >
+                                <button
+                                    type="button"
+                                    class="mr-1 rounded p-1 text-slate-600 hover:bg-blue-50 hover:text-blue-700"
+                                    title="Edit"
+                                    @click="openEditJurusan(j)"
+                                >
+                                    <Edit3 class="h-4 w-4" />
+                                </button>
+                                <button
+                                    type="button"
+                                    class="rounded p-1 text-slate-400 hover:bg-rose-50 hover:text-rose-600"
+                                    title="Hapus"
+                                    @click="deleteJurusan(j)"
+                                >
+                                    <Trash2 class="h-4 w-4" />
+                                </button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ================= TAB 2: MATA PELAJARAN ================= -->
+        <div
+            v-if="activeTab === 'mapel'"
+            class="overflow-hidden rounded-xl border border-slate-200/80 bg-white shadow-xs"
+        >
+            <div
+                class="flex items-center justify-between border-b border-slate-200 p-4 sm:p-5"
+            >
+                <div>
+                    <h2
+                        class="text-sm font-bold tracking-wide text-slate-900 uppercase"
+                    >
+                        Daftar Mata Pelajaran (Umum & Kejuruan)
+                    </h2>
+                    <p class="text-xs text-slate-500">
+                        Mata pelajaran yang ditampilkan pada lembar Buku Induk
+                        matriks nilai.
+                    </p>
+                </div>
 
                 <button
                     type="button"
-                    :class="[
-                        'flex-1 py-2.5 px-4 rounded-lg transition-all flex items-center justify-center gap-2 cursor-pointer',
-                        activeTab === 'ekskul' ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-700 hover:bg-white/60',
-                    ]"
-                    @click="activeTab = 'ekskul'"
+                    class="inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-blue-600 px-3.5 py-2 text-xs font-bold text-white shadow-xs transition-all hover:bg-blue-700"
+                    @click="openCreateMapel"
                 >
-                    <Activity class="w-4 h-4" />
-                    <span>Ekstrakurikuler</span>
+                    <Plus class="h-4 w-4" />
+                    <span>+ Tambah Mata Pelajaran</span>
                 </button>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full border-collapse text-left text-xs">
+                    <thead
+                        class="bg-blue-900 text-[11px] font-bold text-white uppercase"
+                    >
+                        <tr>
+                            <th class="w-16 px-4 py-3 text-center">No Urut</th>
+                            <th class="w-32 px-4 py-3">Kode Mapel</th>
+                            <th class="px-4 py-3">Nama Mata Pelajaran</th>
+                            <th class="w-40 px-4 py-3">Kelompok</th>
+                            <th class="px-4 py-3">Sub-Kelompok</th>
+                            <th class="w-28 px-4 py-3 text-right">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-200">
+                        <tr
+                            v-for="m in mapelList"
+                            :key="m.id"
+                            class="hover:bg-blue-50/50"
+                        >
+                            <td
+                                class="px-4 py-2.5 text-center font-bold text-slate-600"
+                            >
+                                {{ m.no_urut }}
+                            </td>
+                            <td
+                                class="px-4 py-2.5 font-mono font-bold text-blue-900"
+                            >
+                                {{ m.kode_mapel }}
+                            </td>
+                            <td class="px-4 py-2.5 font-bold text-slate-900">
+                                {{ m.nama_mapel }}
+                            </td>
+                            <td class="px-4 py-2.5">
+                                <span
+                                    v-if="m.kelompok === 'A_UMUM'"
+                                    class="rounded bg-sky-100 px-2 py-0.5 text-[10.5px] font-bold text-sky-800"
+                                >
+                                    A. UMUM
+                                </span>
+                                <span
+                                    v-else
+                                    class="rounded bg-indigo-100 px-2 py-0.5 text-[10.5px] font-bold text-indigo-800"
+                                >
+                                    B. KEJURUAN
+                                </span>
+                            </td>
+                            <td class="px-4 py-2.5 text-slate-500">
+                                {{ m.sub_kelompok || '-' }}
+                            </td>
+                            <td
+                                class="px-4 py-2.5 text-right whitespace-nowrap"
+                            >
+                                <button
+                                    type="button"
+                                    class="mr-1 rounded p-1 text-slate-600 hover:bg-blue-50 hover:text-blue-700"
+                                    title="Edit"
+                                    @click="openEditMapel(m)"
+                                >
+                                    <Edit3 class="h-4 w-4" />
+                                </button>
+                                <button
+                                    type="button"
+                                    class="rounded p-1 text-slate-400 hover:bg-rose-50 hover:text-rose-600"
+                                    title="Hapus"
+                                    @click="deleteMapel(m)"
+                                >
+                                    <Trash2 class="h-4 w-4" />
+                                </button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ================= TAB 3: EKSTRAKURIKULER ================= -->
+        <div
+            v-if="activeTab === 'ekskul'"
+            class="overflow-hidden rounded-xl border border-slate-200/80 bg-white shadow-xs"
+        >
+            <div
+                class="flex items-center justify-between border-b border-slate-200 p-4 sm:p-5"
+            >
+                <div>
+                    <h2
+                        class="text-sm font-bold tracking-wide text-slate-900 uppercase"
+                    >
+                        Daftar Kegiatan Ekstrakurikuler
+                    </h2>
+                    <p class="text-xs text-slate-500">
+                        Kegiatan non-akademik yang tercantum pada lembar Buku
+                        Induk.
+                    </p>
+                </div>
 
                 <button
                     type="button"
-                    :class="[
-                        'flex-1 py-2.5 px-4 rounded-lg transition-all flex items-center justify-center gap-2 cursor-pointer',
-                        activeTab === 'tahun' ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-700 hover:bg-white/60',
-                    ]"
-                    @click="activeTab = 'tahun'"
+                    class="inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-blue-600 px-3.5 py-2 text-xs font-bold text-white shadow-xs transition-all hover:bg-blue-700"
+                    @click="openCreateEkskul"
                 >
-                    <Calendar class="w-4 h-4" />
-                    <span>Tahun Pelajaran</span>
+                    <Plus class="h-4 w-4" />
+                    <span>+ Tambah Ekstrakurikuler</span>
                 </button>
             </div>
 
-            <!-- ================= TAB 1: KONSENTRASI KEAHLIAN (JURUSAN) ================= -->
-            <div v-if="activeTab === 'jurusan'" class="bg-white rounded-xl border border-slate-200/80 shadow-xs overflow-hidden">
-                <div class="p-4 sm:p-5 flex items-center justify-between border-b border-slate-200">
-                    <div>
-                        <h2 class="text-sm font-bold text-slate-900 uppercase tracking-wide">
-                            Daftar Konsentrasi Keahlian (Jurusan)
-                        </h2>
-                        <p class="text-xs text-slate-500">Kunci pencocokan kolom <strong>kode_jurusan</strong> pada Excel.</p>
-                    </div>
+            <div class="overflow-x-auto">
+                <table class="w-full border-collapse text-left text-xs">
+                    <thead
+                        class="bg-blue-900 text-[11px] font-bold text-white uppercase"
+                    >
+                        <tr>
+                            <th class="w-16 px-4 py-3 text-center">No Urut</th>
+                            <th class="w-48 px-4 py-3">Kode Ekskul</th>
+                            <th class="px-4 py-3">Nama Ekstrakurikuler</th>
+                            <th class="w-28 px-4 py-3 text-right">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-200">
+                        <tr
+                            v-for="e in ekskulList"
+                            :key="e.id"
+                            class="hover:bg-blue-50/50"
+                        >
+                            <td
+                                class="px-4 py-2.5 text-center font-bold text-slate-600"
+                            >
+                                {{ e.no_urut }}
+                            </td>
+                            <td
+                                class="px-4 py-2.5 font-mono font-bold text-blue-900"
+                            >
+                                {{ e.kode_ekskul }}
+                            </td>
+                            <td class="px-4 py-2.5 font-bold text-slate-900">
+                                {{ e.nama_ekskul }}
+                            </td>
+                            <td
+                                class="px-4 py-2.5 text-right whitespace-nowrap"
+                            >
+                                <button
+                                    type="button"
+                                    class="mr-1 rounded p-1 text-slate-600 hover:bg-blue-50 hover:text-blue-700"
+                                    title="Edit"
+                                    @click="openEditEkskul(e)"
+                                >
+                                    <Edit3 class="h-4 w-4" />
+                                </button>
+                                <button
+                                    type="button"
+                                    class="rounded p-1 text-slate-400 hover:bg-rose-50 hover:text-rose-600"
+                                    title="Hapus"
+                                    @click="deleteEkskul(e)"
+                                >
+                                    <Trash2 class="h-4 w-4" />
+                                </button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
 
+        <!-- ================= TAB 4: TAHUN PELAJARAN ================= -->
+        <div
+            v-if="activeTab === 'tahun'"
+            class="overflow-hidden rounded-xl border border-slate-200/80 bg-white shadow-xs"
+        >
+            <div
+                class="flex items-center justify-between border-b border-slate-200 p-4 sm:p-5"
+            >
+                <div>
+                    <h2
+                        class="text-sm font-bold tracking-wide text-slate-900 uppercase"
+                    >
+                        Daftar Tahun Pelajaran
+                    </h2>
+                    <p class="text-xs text-slate-500">
+                        Tentukan tahun pelajaran yang sedang aktif berjalan di
+                        sekolah.
+                    </p>
+                </div>
+
+                <button
+                    type="button"
+                    class="inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-blue-600 px-3.5 py-2 text-xs font-bold text-white shadow-xs transition-all hover:bg-blue-700"
+                    @click="openCreateTahun"
+                >
+                    <Plus class="h-4 w-4" />
+                    <span>+ Tambah Tahun Pelajaran</span>
+                </button>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full border-collapse text-left text-xs">
+                    <thead
+                        class="bg-blue-900 text-[11px] font-bold text-white uppercase"
+                    >
+                        <tr>
+                            <th class="w-16 px-4 py-3 text-center">No</th>
+                            <th class="px-4 py-3">Tahun Pelajaran</th>
+                            <th class="w-36 px-4 py-3 text-center">
+                                Status Aktif
+                            </th>
+                            <th class="w-44 px-4 py-3 text-right">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-200">
+                        <tr
+                            v-for="(t, idx) in tahunList"
+                            :key="t.id"
+                            class="hover:bg-blue-50/50"
+                        >
+                            <td
+                                class="px-4 py-2.5 text-center font-bold text-slate-500"
+                            >
+                                {{ idx + 1 }}
+                            </td>
+                            <td
+                                class="px-4 py-2.5 font-mono text-sm font-bold text-slate-900"
+                            >
+                                {{ t.tahun_pelajaran }}
+                            </td>
+                            <td class="px-4 py-2.5 text-center">
+                                <span
+                                    v-if="t.is_aktif"
+                                    class="inline-flex items-center gap-1 rounded-full border border-emerald-300 bg-emerald-100 px-2.5 py-0.5 text-[11px] font-bold text-emerald-800"
+                                >
+                                    <CheckCircle2 class="h-3.5 w-3.5" />
+                                    Aktif Berjalan
+                                </span>
+                                <span v-else class="text-xs text-slate-400"
+                                    >Tidak Aktif</span
+                                >
+                            </td>
+                            <td
+                                class="px-4 py-2.5 text-right whitespace-nowrap"
+                            >
+                                <button
+                                    v-if="!t.is_aktif"
+                                    type="button"
+                                    class="mr-2 cursor-pointer rounded border border-blue-200 bg-sky-50 px-2.5 py-1 text-[11px] font-bold text-blue-700 transition-colors hover:bg-blue-600 hover:text-white"
+                                    title="Jadikan Tahun Aktif"
+                                    @click="setTahunAktif(t)"
+                                >
+                                    Set Aktif
+                                </button>
+                                <button
+                                    type="button"
+                                    class="mr-1 rounded p-1 text-slate-600 hover:bg-blue-50 hover:text-blue-700"
+                                    title="Edit"
+                                    @click="openEditTahun(t)"
+                                >
+                                    <Edit3 class="h-4 w-4" />
+                                </button>
+                                <button
+                                    type="button"
+                                    class="rounded p-1 text-slate-400 hover:bg-rose-50 hover:text-rose-600"
+                                    title="Hapus"
+                                    @click="deleteTahun(t)"
+                                >
+                                    <Trash2 class="h-4 w-4" />
+                                </button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= MODAL JURUSAN ================= -->
+    <div
+        v-if="isJurusanModalOpen"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-xs"
+    >
+        <div
+            class="w-full max-w-lg overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl"
+        >
+            <div
+                class="flex items-center justify-between bg-blue-900 px-6 py-4 text-white"
+            >
+                <h3 class="text-sm font-black uppercase">
+                    {{
+                        editingJurusanId
+                            ? 'Edit Konsentrasi Keahlian'
+                            : 'Tambah Konsentrasi Keahlian'
+                    }}
+                </h3>
+                <button
+                    @click="isJurusanModalOpen = false"
+                    class="p-1 text-blue-200 hover:text-white"
+                >
+                    <X class="h-5 w-5" />
+                </button>
+            </div>
+            <form @submit.prevent="submitJurusan" class="space-y-4 p-6 text-xs">
+                <div>
+                    <label class="mb-1 block font-bold text-slate-700"
+                        >Program Keahlian *</label
+                    >
+                    <select
+                        v-model="jurusanForm.program_keahlian_id"
+                        required
+                        class="w-full rounded-lg border px-3 py-2"
+                    >
+                        <option
+                            v-for="p in programList"
+                            :key="p.id"
+                            :value="p.id"
+                        >
+                            {{ p.nama_program_keahlian }} ({{ p.kode }})
+                        </option>
+                    </select>
+                </div>
+                <div>
+                    <label class="mb-1 block font-bold text-slate-700"
+                        >Kode Singkat (Dipakai di Excel) *</label
+                    >
+                    <input
+                        v-model="jurusanForm.kode_singkat"
+                        type="text"
+                        required
+                        placeholder="Contoh: TKJ"
+                        class="w-full rounded-lg border px-3 py-2 font-mono uppercase"
+                    />
+                </div>
+                <div>
+                    <label class="mb-1 block font-bold text-slate-700"
+                        >Nama Konsentrasi Keahlian *</label
+                    >
+                    <input
+                        v-model="jurusanForm.nama_konsentrasi"
+                        type="text"
+                        required
+                        placeholder="Contoh: TEKNIK KOMPUTER & JARINGAN (TKJ)"
+                        class="w-full rounded-lg border px-3 py-2 uppercase"
+                    />
+                </div>
+                <div
+                    class="flex justify-end gap-2 border-t border-slate-200 pt-3"
+                >
                     <button
                         type="button"
-                        class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all shadow-xs cursor-pointer"
-                        @click="openCreateJurusan"
+                        @click="isJurusanModalOpen = false"
+                        class="rounded-lg border px-4 py-2"
                     >
-                        <Plus class="w-4 h-4" />
-                        <span>+ Tambah Jurusan</span>
+                        Batal
+                    </button>
+                    <button
+                        type="submit"
+                        :disabled="jurusanForm.processing"
+                        class="rounded-lg bg-blue-600 px-5 py-2 font-bold text-white hover:bg-blue-700"
+                    >
+                        Simpan
                     </button>
                 </div>
+            </form>
+        </div>
+    </div>
 
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left text-xs border-collapse">
-                        <thead class="bg-blue-900 text-white uppercase text-[11px] font-bold">
-                            <tr>
-                                <th class="px-4 py-3 w-12 text-center">No</th>
-                                <th class="px-4 py-3 w-32">Kode Singkat</th>
-                                <th class="px-4 py-3">Nama Konsentrasi Keahlian</th>
-                                <th class="px-4 py-3">Program & Bidang Keahlian</th>
-                                <th class="px-4 py-3 text-right w-28">Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-slate-200">
-                            <tr
-                                v-for="(j, idx) in jurusanList"
-                                :key="j.id"
-                                class="hover:bg-blue-50/50"
-                            >
-                                <td class="px-4 py-2.5 text-center font-bold text-slate-500">{{ idx + 1 }}</td>
-                                <td class="px-4 py-2.5 font-mono font-bold text-blue-900">{{ j.kode_singkat }}</td>
-                                <td class="px-4 py-2.5 font-bold text-slate-900">{{ j.nama_konsentrasi }}</td>
-                                <td class="px-4 py-2.5 text-slate-600">
-                                    {{ j.program_keahlian?.nama_program_keahlian }}
-                                    <span class="text-slate-400 block text-[10px]">
-                                        Bidang: {{ j.program_keahlian?.bidang_studi?.nama_bidang_studi }}
-                                    </span>
-                                </td>
-                                <td class="px-4 py-2.5 text-right whitespace-nowrap">
-                                    <button
-                                        type="button"
-                                        class="p-1 rounded text-slate-600 hover:text-blue-700 hover:bg-blue-50 mr-1"
-                                        title="Edit"
-                                        @click="openEditJurusan(j)"
-                                    >
-                                        <Edit3 class="w-4 h-4" />
-                                    </button>
-                                    <button
-                                        type="button"
-                                        class="p-1 rounded text-slate-400 hover:text-rose-600 hover:bg-rose-50"
-                                        title="Hapus"
-                                        @click="deleteJurusan(j)"
-                                    >
-                                        <Trash2 class="w-4 h-4" />
-                                    </button>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
+    <!-- ================= MODAL MATA PELAJARAN ================= -->
+    <div
+        v-if="isMapelModalOpen"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-xs"
+    >
+        <div
+            class="w-full max-w-lg overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl"
+        >
+            <div
+                class="flex items-center justify-between bg-blue-900 px-6 py-4 text-white"
+            >
+                <h3 class="text-sm font-black uppercase">
+                    {{
+                        editingMapelId
+                            ? 'Edit Mata Pelajaran'
+                            : 'Tambah Mata Pelajaran'
+                    }}
+                </h3>
+                <button
+                    @click="isMapelModalOpen = false"
+                    class="p-1 text-blue-200 hover:text-white"
+                >
+                    <X class="h-5 w-5" />
+                </button>
             </div>
-
-            <!-- ================= TAB 2: MATA PELAJARAN ================= -->
-            <div v-if="activeTab === 'mapel'" class="bg-white rounded-xl border border-slate-200/80 shadow-xs overflow-hidden">
-                <div class="p-4 sm:p-5 flex items-center justify-between border-b border-slate-200">
+            <form @submit.prevent="submitMapel" class="space-y-4 p-6 text-xs">
+                <div>
+                    <label class="mb-1 block font-bold text-slate-700"
+                        >Kode Mapel (Dipakai di Excel) *</label
+                    >
+                    <input
+                        v-model="mapelForm.kode_mapel"
+                        type="text"
+                        required
+                        placeholder="Contoh: MTK / INFORMATIKA"
+                        class="w-full rounded-lg border px-3 py-2 font-mono uppercase"
+                    />
+                </div>
+                <div>
+                    <label class="mb-1 block font-bold text-slate-700"
+                        >Nama Mata Pelajaran *</label
+                    >
+                    <input
+                        v-model="mapelForm.nama_mapel"
+                        type="text"
+                        required
+                        placeholder="Contoh: Matematika"
+                        class="w-full rounded-lg border px-3 py-2"
+                    />
+                </div>
+                <div>
+                    <label class="mb-1 block font-bold text-slate-700"
+                        >Kelompok Mapel *</label
+                    >
+                    <select
+                        v-model="mapelForm.kelompok"
+                        class="w-full rounded-lg border px-3 py-2 font-bold"
+                    >
+                        <option value="A_UMUM">
+                            A. Kelompok Mata Pelajaran Umum
+                        </option>
+                        <option value="B_KEJURUAN">
+                            B. Kelompok Mata Pelajaran Kejuruan
+                        </option>
+                    </select>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
                     <div>
-                        <h2 class="text-sm font-bold text-slate-900 uppercase tracking-wide">
-                            Daftar Mata Pelajaran (Umum & Kejuruan)
-                        </h2>
-                        <p class="text-xs text-slate-500">Mata pelajaran yang ditampilkan pada lembar Buku Induk matriks nilai.</p>
+                        <label class="mb-1 block font-bold text-slate-700"
+                            >Sub-Kelompok (Opsional)</label
+                        >
+                        <input
+                            v-model="mapelForm.sub_kelompok"
+                            type="text"
+                            placeholder="Contoh: Pendidikan Agama / Pilihan"
+                            class="w-full rounded-lg border px-3 py-2"
+                        />
                     </div>
-
+                    <div>
+                        <label class="mb-1 block font-bold text-slate-700"
+                            >Nomor Urut Tampil *</label
+                        >
+                        <input
+                            v-model.number="mapelForm.no_urut"
+                            type="number"
+                            min="1"
+                            class="w-full rounded-lg border px-3 py-2 font-bold"
+                        />
+                    </div>
+                </div>
+                <div
+                    class="flex justify-end gap-2 border-t border-slate-200 pt-3"
+                >
                     <button
                         type="button"
-                        class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all shadow-xs cursor-pointer"
-                        @click="openCreateMapel"
+                        @click="isMapelModalOpen = false"
+                        class="rounded-lg border px-4 py-2"
                     >
-                        <Plus class="w-4 h-4" />
-                        <span>+ Tambah Mata Pelajaran</span>
+                        Batal
+                    </button>
+                    <button
+                        type="submit"
+                        :disabled="mapelForm.processing"
+                        class="rounded-lg bg-blue-600 px-5 py-2 font-bold text-white hover:bg-blue-700"
+                    >
+                        Simpan
                     </button>
                 </div>
+            </form>
+        </div>
+    </div>
 
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left text-xs border-collapse">
-                        <thead class="bg-blue-900 text-white uppercase text-[11px] font-bold">
-                            <tr>
-                                <th class="px-4 py-3 w-16 text-center">No Urut</th>
-                                <th class="px-4 py-3 w-32">Kode Mapel</th>
-                                <th class="px-4 py-3">Nama Mata Pelajaran</th>
-                                <th class="px-4 py-3 w-40">Kelompok</th>
-                                <th class="px-4 py-3">Sub-Kelompok</th>
-                                <th class="px-4 py-3 text-right w-28">Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-slate-200">
-                            <tr
-                                v-for="m in mapelList"
-                                :key="m.id"
-                                class="hover:bg-blue-50/50"
-                            >
-                                <td class="px-4 py-2.5 text-center font-bold text-slate-600">{{ m.no_urut }}</td>
-                                <td class="px-4 py-2.5 font-mono font-bold text-blue-900">{{ m.kode_mapel }}</td>
-                                <td class="px-4 py-2.5 font-bold text-slate-900">{{ m.nama_mapel }}</td>
-                                <td class="px-4 py-2.5">
-                                    <span
-                                        v-if="m.kelompok === 'A_UMUM'"
-                                        class="px-2 py-0.5 rounded text-[10.5px] font-bold bg-sky-100 text-sky-800"
-                                    >
-                                        A. UMUM
-                                    </span>
-                                    <span
-                                        v-else
-                                        class="px-2 py-0.5 rounded text-[10.5px] font-bold bg-indigo-100 text-indigo-800"
-                                    >
-                                        B. KEJURUAN
-                                    </span>
-                                </td>
-                                <td class="px-4 py-2.5 text-slate-500">{{ m.sub_kelompok || '-' }}</td>
-                                <td class="px-4 py-2.5 text-right whitespace-nowrap">
-                                    <button
-                                        type="button"
-                                        class="p-1 rounded text-slate-600 hover:text-blue-700 hover:bg-blue-50 mr-1"
-                                        title="Edit"
-                                        @click="openEditMapel(m)"
-                                    >
-                                        <Edit3 class="w-4 h-4" />
-                                    </button>
-                                    <button
-                                        type="button"
-                                        class="p-1 rounded text-slate-400 hover:text-rose-600 hover:bg-rose-50"
-                                        title="Hapus"
-                                        @click="deleteMapel(m)"
-                                    >
-                                        <Trash2 class="w-4 h-4" />
-                                    </button>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
+    <!-- ================= MODAL EKSTRAKURIKULER ================= -->
+    <div
+        v-if="isEkskulModalOpen"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-xs"
+    >
+        <div
+            class="w-full max-w-lg overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl"
+        >
+            <div
+                class="flex items-center justify-between bg-blue-900 px-6 py-4 text-white"
+            >
+                <h3 class="text-sm font-black uppercase">
+                    {{
+                        editingEkskulId
+                            ? 'Edit Ekstrakurikuler'
+                            : 'Tambah Ekstrakurikuler'
+                    }}
+                </h3>
+                <button
+                    @click="isEkskulModalOpen = false"
+                    class="p-1 text-blue-200 hover:text-white"
+                >
+                    <X class="h-5 w-5" />
+                </button>
             </div>
-
-            <!-- ================= TAB 3: EKSTRAKURIKULER ================= -->
-            <div v-if="activeTab === 'ekskul'" class="bg-white rounded-xl border border-slate-200/80 shadow-xs overflow-hidden">
-                <div class="p-4 sm:p-5 flex items-center justify-between border-b border-slate-200">
-                    <div>
-                        <h2 class="text-sm font-bold text-slate-900 uppercase tracking-wide">
-                            Daftar Kegiatan Ekstrakurikuler
-                        </h2>
-                        <p class="text-xs text-slate-500">Kegiatan non-akademik yang tercantum pada lembar Buku Induk.</p>
-                    </div>
-
+            <form @submit.prevent="submitEkskul" class="space-y-4 p-6 text-xs">
+                <div>
+                    <label class="mb-1 block font-bold text-slate-700"
+                        >Kode Ekskul (Dipakai di Excel) *</label
+                    >
+                    <input
+                        v-model="ekskulForm.kode_ekskul"
+                        type="text"
+                        required
+                        placeholder="Contoh: EKSKUL_PRAMUKA"
+                        class="w-full rounded-lg border px-3 py-2 font-mono uppercase"
+                    />
+                </div>
+                <div>
+                    <label class="mb-1 block font-bold text-slate-700"
+                        >Nama Ekstrakurikuler *</label
+                    >
+                    <input
+                        v-model="ekskulForm.nama_ekskul"
+                        type="text"
+                        required
+                        placeholder="Contoh: Pramuka"
+                        class="w-full rounded-lg border px-3 py-2"
+                    />
+                </div>
+                <div>
+                    <label class="mb-1 block font-bold text-slate-700"
+                        >Nomor Urut Tampil *</label
+                    >
+                    <input
+                        v-model.number="ekskulForm.no_urut"
+                        type="number"
+                        min="1"
+                        class="w-full rounded-lg border px-3 py-2 font-bold"
+                    />
+                </div>
+                <div
+                    class="flex justify-end gap-2 border-t border-slate-200 pt-3"
+                >
                     <button
                         type="button"
-                        class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all shadow-xs cursor-pointer"
-                        @click="openCreateEkskul"
+                        @click="isEkskulModalOpen = false"
+                        class="rounded-lg border px-4 py-2"
                     >
-                        <Plus class="w-4 h-4" />
-                        <span>+ Tambah Ekstrakurikuler</span>
+                        Batal
+                    </button>
+                    <button
+                        type="submit"
+                        :disabled="ekskulForm.processing"
+                        class="rounded-lg bg-blue-600 px-5 py-2 font-bold text-white hover:bg-blue-700"
+                    >
+                        Simpan
                     </button>
                 </div>
+            </form>
+        </div>
+    </div>
 
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left text-xs border-collapse">
-                        <thead class="bg-blue-900 text-white uppercase text-[11px] font-bold">
-                            <tr>
-                                <th class="px-4 py-3 w-16 text-center">No Urut</th>
-                                <th class="px-4 py-3 w-48">Kode Ekskul</th>
-                                <th class="px-4 py-3">Nama Ekstrakurikuler</th>
-                                <th class="px-4 py-3 text-right w-28">Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-slate-200">
-                            <tr
-                                v-for="e in ekskulList"
-                                :key="e.id"
-                                class="hover:bg-blue-50/50"
-                            >
-                                <td class="px-4 py-2.5 text-center font-bold text-slate-600">{{ e.no_urut }}</td>
-                                <td class="px-4 py-2.5 font-mono font-bold text-blue-900">{{ e.kode_ekskul }}</td>
-                                <td class="px-4 py-2.5 font-bold text-slate-900">{{ e.nama_ekskul }}</td>
-                                <td class="px-4 py-2.5 text-right whitespace-nowrap">
-                                    <button
-                                        type="button"
-                                        class="p-1 rounded text-slate-600 hover:text-blue-700 hover:bg-blue-50 mr-1"
-                                        title="Edit"
-                                        @click="openEditEkskul(e)"
-                                    >
-                                        <Edit3 class="w-4 h-4" />
-                                    </button>
-                                    <button
-                                        type="button"
-                                        class="p-1 rounded text-slate-400 hover:text-rose-600 hover:bg-rose-50"
-                                        title="Hapus"
-                                        @click="deleteEkskul(e)"
-                                    >
-                                        <Trash2 class="w-4 h-4" />
-                                    </button>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
+    <!-- ================= MODAL TAHUN PELAJARAN ================= -->
+    <div
+        v-if="isTahunModalOpen"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-xs"
+    >
+        <div
+            class="w-full max-w-lg overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl"
+        >
+            <div
+                class="flex items-center justify-between bg-blue-900 px-6 py-4 text-white"
+            >
+                <h3 class="text-sm font-black uppercase">
+                    {{
+                        editingTahunId
+                            ? 'Edit Tahun Pelajaran'
+                            : 'Tambah Tahun Pelajaran'
+                    }}
+                </h3>
+                <button
+                    @click="isTahunModalOpen = false"
+                    class="p-1 text-blue-200 hover:text-white"
+                >
+                    <X class="h-5 w-5" />
+                </button>
             </div>
-
-            <!-- ================= TAB 4: TAHUN PELAJARAN ================= -->
-            <div v-if="activeTab === 'tahun'" class="bg-white rounded-xl border border-slate-200/80 shadow-xs overflow-hidden">
-                <div class="p-4 sm:p-5 flex items-center justify-between border-b border-slate-200">
-                    <div>
-                        <h2 class="text-sm font-bold text-slate-900 uppercase tracking-wide">
-                            Daftar Tahun Pelajaran
-                        </h2>
-                        <p class="text-xs text-slate-500">Tentukan tahun pelajaran yang sedang aktif berjalan di sekolah.</p>
-                    </div>
-
+            <form @submit.prevent="submitTahun" class="space-y-4 p-6 text-xs">
+                <div>
+                    <label class="mb-1 block font-bold text-slate-700"
+                        >Tahun Pelajaran *</label
+                    >
+                    <input
+                        v-model="tahunForm.tahun_pelajaran"
+                        type="text"
+                        required
+                        placeholder="Contoh: 2025/2026"
+                        class="w-full rounded-lg border px-3 py-2 font-mono font-bold"
+                    />
+                </div>
+                <div class="flex items-center gap-2 pt-2">
+                    <input
+                        v-model="tahunForm.is_aktif"
+                        type="checkbox"
+                        id="checkAktif"
+                        class="h-4 w-4 rounded text-blue-600 focus:ring-blue-500"
+                    />
+                    <label for="checkAktif" class="font-bold text-slate-800"
+                        >Set sebagai Tahun Pelajaran Aktif</label
+                    >
+                </div>
+                <div
+                    class="flex justify-end gap-2 border-t border-slate-200 pt-3"
+                >
                     <button
                         type="button"
-                        class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all shadow-xs cursor-pointer"
-                        @click="openCreateTahun"
+                        @click="isTahunModalOpen = false"
+                        class="rounded-lg border px-4 py-2"
                     >
-                        <Plus class="w-4 h-4" />
-                        <span>+ Tambah Tahun Pelajaran</span>
+                        Batal
+                    </button>
+                    <button
+                        type="submit"
+                        :disabled="tahunForm.processing"
+                        class="rounded-lg bg-blue-600 px-5 py-2 font-bold text-white hover:bg-blue-700"
+                    >
+                        Simpan
                     </button>
                 </div>
-
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left text-xs border-collapse">
-                        <thead class="bg-blue-900 text-white uppercase text-[11px] font-bold">
-                            <tr>
-                                <th class="px-4 py-3 w-16 text-center">No</th>
-                                <th class="px-4 py-3">Tahun Pelajaran</th>
-                                <th class="px-4 py-3 text-center w-36">Status Aktif</th>
-                                <th class="px-4 py-3 text-right w-44">Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-slate-200">
-                            <tr
-                                v-for="(t, idx) in tahunList"
-                                :key="t.id"
-                                class="hover:bg-blue-50/50"
-                            >
-                                <td class="px-4 py-2.5 text-center font-bold text-slate-500">{{ idx + 1 }}</td>
-                                <td class="px-4 py-2.5 font-bold text-slate-900 text-sm font-mono">{{ t.tahun_pelajaran }}</td>
-                                <td class="px-4 py-2.5 text-center">
-                                    <span
-                                        v-if="t.is_aktif"
-                                        class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300"
-                                    >
-                                        <CheckCircle2 class="w-3.5 h-3.5" />
-                                        Aktif Berjalan
-                                    </span>
-                                    <span v-else class="text-slate-400 text-xs">Tidak Aktif</span>
-                                </td>
-                                <td class="px-4 py-2.5 text-right whitespace-nowrap">
-                                    <button
-                                        v-if="!t.is_aktif"
-                                        type="button"
-                                        class="px-2.5 py-1 rounded bg-sky-50 text-blue-700 hover:bg-blue-600 hover:text-white border border-blue-200 text-[11px] font-bold transition-colors mr-2 cursor-pointer"
-                                        title="Jadikan Tahun Aktif"
-                                        @click="setTahunAktif(t)"
-                                    >
-                                        Set Aktif
-                                    </button>
-                                    <button
-                                        type="button"
-                                        class="p-1 rounded text-slate-600 hover:text-blue-700 hover:bg-blue-50 mr-1"
-                                        title="Edit"
-                                        @click="openEditTahun(t)"
-                                    >
-                                        <Edit3 class="w-4 h-4" />
-                                    </button>
-                                    <button
-                                        type="button"
-                                        class="p-1 rounded text-slate-400 hover:text-rose-600 hover:bg-rose-50"
-                                        title="Hapus"
-                                        @click="deleteTahun(t)"
-                                    >
-                                        <Trash2 class="w-4 h-4" />
-                                    </button>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+            </form>
         </div>
-
-        <!-- ================= MODAL JURUSAN ================= -->
-        <div v-if="isJurusanModalOpen" class="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4">
-            <div class="bg-white rounded-2xl max-w-lg w-full shadow-2xl border border-slate-200 overflow-hidden">
-                <div class="px-6 py-4 bg-blue-900 text-white flex items-center justify-between">
-                    <h3 class="font-black text-sm uppercase">
-                        {{ editingJurusanId ? 'Edit Konsentrasi Keahlian' : 'Tambah Konsentrasi Keahlian' }}
-                    </h3>
-                    <button @click="isJurusanModalOpen = false" class="text-blue-200 hover:text-white p-1">
-                        <X class="w-5 h-5" />
-                    </button>
-                </div>
-                <form @submit.prevent="submitJurusan" class="p-6 space-y-4 text-xs">
-                    <div>
-                        <label class="block font-bold text-slate-700 mb-1">Program Keahlian *</label>
-                        <select v-model="jurusanForm.program_keahlian_id" required class="w-full px-3 py-2 border rounded-lg">
-                            <option v-for="p in programList" :key="p.id" :value="p.id">
-                                {{ p.nama_program_keahlian }} ({{ p.kode }})
-                            </option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block font-bold text-slate-700 mb-1">Kode Singkat (Dipakai di Excel) *</label>
-                        <input v-model="jurusanForm.kode_singkat" type="text" required placeholder="Contoh: TKJ" class="w-full px-3 py-2 border rounded-lg font-mono uppercase" />
-                    </div>
-                    <div>
-                        <label class="block font-bold text-slate-700 mb-1">Nama Konsentrasi Keahlian *</label>
-                        <input v-model="jurusanForm.nama_konsentrasi" type="text" required placeholder="Contoh: TEKNIK KOMPUTER & JARINGAN (TKJ)" class="w-full px-3 py-2 border rounded-lg uppercase" />
-                    </div>
-                    <div class="pt-3 border-t border-slate-200 flex justify-end gap-2">
-                        <button type="button" @click="isJurusanModalOpen = false" class="px-4 py-2 border rounded-lg">Batal</button>
-                        <button type="submit" :disabled="jurusanForm.processing" class="px-5 py-2 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700">Simpan</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-
-        <!-- ================= MODAL MATA PELAJARAN ================= -->
-        <div v-if="isMapelModalOpen" class="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4">
-            <div class="bg-white rounded-2xl max-w-lg w-full shadow-2xl border border-slate-200 overflow-hidden">
-                <div class="px-6 py-4 bg-blue-900 text-white flex items-center justify-between">
-                    <h3 class="font-black text-sm uppercase">
-                        {{ editingMapelId ? 'Edit Mata Pelajaran' : 'Tambah Mata Pelajaran' }}
-                    </h3>
-                    <button @click="isMapelModalOpen = false" class="text-blue-200 hover:text-white p-1">
-                        <X class="w-5 h-5" />
-                    </button>
-                </div>
-                <form @submit.prevent="submitMapel" class="p-6 space-y-4 text-xs">
-                    <div>
-                        <label class="block font-bold text-slate-700 mb-1">Kode Mapel (Dipakai di Excel) *</label>
-                        <input v-model="mapelForm.kode_mapel" type="text" required placeholder="Contoh: MTK / INFORMATIKA" class="w-full px-3 py-2 border rounded-lg font-mono uppercase" />
-                    </div>
-                    <div>
-                        <label class="block font-bold text-slate-700 mb-1">Nama Mata Pelajaran *</label>
-                        <input v-model="mapelForm.nama_mapel" type="text" required placeholder="Contoh: Matematika" class="w-full px-3 py-2 border rounded-lg" />
-                    </div>
-                    <div>
-                        <label class="block font-bold text-slate-700 mb-1">Kelompok Mapel *</label>
-                        <select v-model="mapelForm.kelompok" class="w-full px-3 py-2 border rounded-lg font-bold">
-                            <option value="A_UMUM">A. Kelompok Mata Pelajaran Umum</option>
-                            <option value="B_KEJURUAN">B. Kelompok Mata Pelajaran Kejuruan</option>
-                        </select>
-                    </div>
-                    <div class="grid grid-cols-2 gap-3">
-                        <div>
-                            <label class="block font-bold text-slate-700 mb-1">Sub-Kelompok (Opsional)</label>
-                            <input v-model="mapelForm.sub_kelompok" type="text" placeholder="Contoh: Pendidikan Agama / Pilihan" class="w-full px-3 py-2 border rounded-lg" />
-                        </div>
-                        <div>
-                            <label class="block font-bold text-slate-700 mb-1">Nomor Urut Tampil *</label>
-                            <input v-model.number="mapelForm.no_urut" type="number" min="1" class="w-full px-3 py-2 border rounded-lg font-bold" />
-                        </div>
-                    </div>
-                    <div class="pt-3 border-t border-slate-200 flex justify-end gap-2">
-                        <button type="button" @click="isMapelModalOpen = false" class="px-4 py-2 border rounded-lg">Batal</button>
-                        <button type="submit" :disabled="mapelForm.processing" class="px-5 py-2 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700">Simpan</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-
-        <!-- ================= MODAL EKSTRAKURIKULER ================= -->
-        <div v-if="isEkskulModalOpen" class="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4">
-            <div class="bg-white rounded-2xl max-w-lg w-full shadow-2xl border border-slate-200 overflow-hidden">
-                <div class="px-6 py-4 bg-blue-900 text-white flex items-center justify-between">
-                    <h3 class="font-black text-sm uppercase">
-                        {{ editingEkskulId ? 'Edit Ekstrakurikuler' : 'Tambah Ekstrakurikuler' }}
-                    </h3>
-                    <button @click="isEkskulModalOpen = false" class="text-blue-200 hover:text-white p-1">
-                        <X class="w-5 h-5" />
-                    </button>
-                </div>
-                <form @submit.prevent="submitEkskul" class="p-6 space-y-4 text-xs">
-                    <div>
-                        <label class="block font-bold text-slate-700 mb-1">Kode Ekskul (Dipakai di Excel) *</label>
-                        <input v-model="ekskulForm.kode_ekskul" type="text" required placeholder="Contoh: EKSKUL_PRAMUKA" class="w-full px-3 py-2 border rounded-lg font-mono uppercase" />
-                    </div>
-                    <div>
-                        <label class="block font-bold text-slate-700 mb-1">Nama Ekstrakurikuler *</label>
-                        <input v-model="ekskulForm.nama_ekskul" type="text" required placeholder="Contoh: Pramuka" class="w-full px-3 py-2 border rounded-lg" />
-                    </div>
-                    <div>
-                        <label class="block font-bold text-slate-700 mb-1">Nomor Urut Tampil *</label>
-                        <input v-model.number="ekskulForm.no_urut" type="number" min="1" class="w-full px-3 py-2 border rounded-lg font-bold" />
-                    </div>
-                    <div class="pt-3 border-t border-slate-200 flex justify-end gap-2">
-                        <button type="button" @click="isEkskulModalOpen = false" class="px-4 py-2 border rounded-lg">Batal</button>
-                        <button type="submit" :disabled="ekskulForm.processing" class="px-5 py-2 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700">Simpan</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-
-        <!-- ================= MODAL TAHUN PELAJARAN ================= -->
-        <div v-if="isTahunModalOpen" class="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4">
-            <div class="bg-white rounded-2xl max-w-lg w-full shadow-2xl border border-slate-200 overflow-hidden">
-                <div class="px-6 py-4 bg-blue-900 text-white flex items-center justify-between">
-                    <h3 class="font-black text-sm uppercase">
-                        {{ editingTahunId ? 'Edit Tahun Pelajaran' : 'Tambah Tahun Pelajaran' }}
-                    </h3>
-                    <button @click="isTahunModalOpen = false" class="text-blue-200 hover:text-white p-1">
-                        <X class="w-5 h-5" />
-                    </button>
-                </div>
-                <form @submit.prevent="submitTahun" class="p-6 space-y-4 text-xs">
-                    <div>
-                        <label class="block font-bold text-slate-700 mb-1">Tahun Pelajaran *</label>
-                        <input v-model="tahunForm.tahun_pelajaran" type="text" required placeholder="Contoh: 2025/2026" class="w-full px-3 py-2 border rounded-lg font-mono font-bold" />
-                    </div>
-                    <div class="flex items-center gap-2 pt-2">
-                        <input v-model="tahunForm.is_aktif" type="checkbox" id="checkAktif" class="w-4 h-4 rounded text-blue-600 focus:ring-blue-500" />
-                        <label for="checkAktif" class="font-bold text-slate-800">Set sebagai Tahun Pelajaran Aktif</label>
-                    </div>
-                    <div class="pt-3 border-t border-slate-200 flex justify-end gap-2">
-                        <button type="button" @click="isTahunModalOpen = false" class="px-4 py-2 border rounded-lg">Batal</button>
-                        <button type="submit" :disabled="tahunForm.processing" class="px-5 py-2 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700">Simpan</button>
-                    </div>
-                </form>
-            </div>
-        </div>
+    </div>
 </template>

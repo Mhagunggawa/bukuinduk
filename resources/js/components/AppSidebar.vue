@@ -24,7 +24,7 @@ withDefaults(
     }>(),
     {
         open: false,
-    }
+    },
 );
 
 const emit = defineEmits<{
@@ -79,7 +79,7 @@ const masterNavItems = computed<NavItem[]>(() => {
                 title: 'Manajemen Pengguna',
                 href: '/users' as any,
                 icon: UserCog,
-            }
+            },
         );
     }
     return items;
@@ -130,40 +130,57 @@ const closeSidebar = () => {
     <!-- Sidebar: Clean Modern Deep Navy (w-64 bg-[#0B1736] text-white) -->
     <aside
         :class="[
-            'fixed inset-y-0 left-0 z-50 w-64 bg-[#0B1736] text-white flex flex-col transition-transform duration-300 ease-in-out md:static md:translate-x-0 print:hidden shadow-2xl border-r border-slate-800/60',
+            'fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r border-slate-800/60 bg-[#0B1736] text-white shadow-2xl transition-transform duration-300 ease-in-out md:static md:translate-x-0 print:hidden',
             open ? 'translate-x-0' : '-translate-x-full',
         ]"
     >
         <!-- Sidebar Header / Logo -->
-        <div class="h-16 flex items-center justify-between px-5 border-b border-white/10 bg-[#070e24]/70 shrink-0">
-            <Link href="/dashboard" class="flex items-center gap-3 group" title="E-Buku Induk SMK">
-                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-700 to-sky-500 flex items-center justify-center text-white shadow-lg shadow-blue-500/25 ring-2 ring-white/15 group-hover:scale-105 transition-all">
-                    <GraduationCap class="w-5 h-5" />
+        <div
+            class="flex h-16 shrink-0 items-center justify-between border-b border-white/10 bg-[#070e24]/70 px-5"
+        >
+            <Link
+                href="/dashboard"
+                class="group flex items-center gap-3"
+                title="E-Buku Induk SMK"
+            >
+                <div
+                    class="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-tr from-blue-700 to-sky-500 text-white shadow-lg ring-2 shadow-blue-500/25 ring-white/15 transition-all group-hover:scale-105"
+                >
+                    <GraduationCap class="h-5 w-5" />
                 </div>
                 <div class="flex flex-col">
-                    <span class="font-black text-sm tracking-wide text-white leading-tight uppercase">E-Buku Induk</span>
-                    <span class="text-[10px] text-sky-300/90 font-semibold tracking-wider">SMK AKADEMIK</span>
+                    <span
+                        class="text-sm leading-tight font-black tracking-wide text-white uppercase"
+                        >E-Buku Induk</span
+                    >
+                    <span
+                        class="text-[10px] font-semibold tracking-wider text-sky-300/90"
+                        >SMK AKADEMIK</span
+                    >
                 </div>
             </Link>
             <button
-                class="md:hidden text-slate-400 hover:text-white p-1 rounded-lg cursor-pointer"
+                class="cursor-pointer rounded-lg p-1 text-slate-400 hover:text-white md:hidden"
                 title="Tutup Menu"
                 @click="closeSidebar"
             >
-                <X class="w-5 h-5" />
+                <X class="h-5 w-5" />
             </button>
         </div>
 
         <!-- Navigation Links (Kumpulan Pintasan Berdasarkan Tiap Bagian Title) -->
-        <div class="flex-1 overflow-y-auto py-5 px-3 space-y-6">
+        <div class="flex-1 space-y-6 overflow-y-auto px-3 py-5">
             <div
                 v-for="(section, sIdx) in navSections"
                 :key="section.title"
-                :class="['space-y-1.5', sIdx > 0 ? 'border-t border-white/10 pt-5' : '']"
+                :class="[
+                    'space-y-1.5',
+                    sIdx > 0 ? 'border-t border-white/10 pt-5' : '',
+                ]"
             >
                 <!-- Title Tiap Bagian Sidebar (Jelas, Terbaca, Bersih) -->
                 <div
-                    class="px-3 pb-1 flex items-center justify-between text-[11px] font-bold text-slate-400 uppercase tracking-wider"
+                    class="flex items-center justify-between px-3 pb-1 text-[11px] font-bold tracking-wider text-slate-400 uppercase"
                     :title="section.title"
                 >
                     <span>{{ section.title }}</span>
@@ -178,9 +195,9 @@ const closeSidebar = () => {
                         :title="item.title"
                         :aria-label="item.title"
                         :class="[
-                            'flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all group',
+                            'group flex items-center gap-3 rounded-xl px-3 py-2.5 text-xs font-semibold transition-all',
                             isNavActive(String(item.href))
-                                ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30 font-bold'
+                                ? 'bg-blue-600 font-bold text-white shadow-md shadow-blue-600/30'
                                 : 'text-slate-300 hover:bg-white/5 hover:text-white',
                         ]"
                     >
@@ -188,12 +205,12 @@ const closeSidebar = () => {
                             :is="item.icon"
                             v-if="item.icon"
                             :class="[
-                                'w-4 h-4 shrink-0 transition-colors',
+                                'h-4 w-4 shrink-0 transition-colors',
                                 isNavActive(String(item.href))
                                     ? 'text-white'
                                     : section.title.includes('Master')
-                                        ? 'text-amber-400 group-hover:text-amber-300'
-                                        : 'text-slate-400 group-hover:text-sky-400',
+                                      ? 'text-amber-400 group-hover:text-amber-300'
+                                      : 'text-slate-400 group-hover:text-sky-400',
                             ]"
                         />
                         <span class="truncate">{{ item.title }}</span>
@@ -203,18 +220,33 @@ const closeSidebar = () => {
         </div>
 
         <!-- Modern User Card at Sidebar Bottom -->
-        <div class="p-3 border-t border-white/10 bg-[#070e24]/80 shrink-0">
-            <div class="p-2.5 rounded-xl bg-white/5 border border-white/10 flex items-center justify-between gap-3">
-                <div class="flex items-center gap-2.5 min-w-0">
-                    <div class="w-9 h-9 rounded-lg bg-gradient-to-tr from-blue-600 to-indigo-600 text-white font-bold text-xs flex items-center justify-center shrink-0 ring-1 ring-white/20">
+        <div class="shrink-0 border-t border-white/10 bg-[#070e24]/80 p-3">
+            <div
+                class="flex items-center justify-between gap-3 rounded-xl border border-white/10 bg-white/5 p-2.5"
+            >
+                <div class="flex min-w-0 items-center gap-2.5">
+                    <div
+                        class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gradient-to-tr from-blue-600 to-indigo-600 text-xs font-bold text-white ring-1 ring-white/20"
+                    >
                         {{ userInitials }}
                     </div>
-                    <div class="min-w-0 flex flex-col">
-                        <span class="text-xs font-bold text-white truncate leading-tight">{{ user?.name || 'Pengguna' }}</span>
-                        <div class="flex items-center gap-1.5 mt-0.5">
-                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0"></span>
-                            <span class="text-[10px] text-slate-300 uppercase font-semibold">
-                                {{ user?.role === 'admin' ? 'Administrator' : 'Tata Usaha' }}
+                    <div class="flex min-w-0 flex-col">
+                        <span
+                            class="truncate text-xs leading-tight font-bold text-white"
+                            >{{ user?.name || 'Pengguna' }}</span
+                        >
+                        <div class="mt-0.5 flex items-center gap-1.5">
+                            <span
+                                class="h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-400"
+                            ></span>
+                            <span
+                                class="text-[10px] font-semibold text-slate-300 uppercase"
+                            >
+                                {{
+                                    user?.role === 'admin'
+                                        ? 'Administrator'
+                                        : 'Tata Usaha'
+                                }}
                             </span>
                         </div>
                     </div>
@@ -224,10 +256,10 @@ const closeSidebar = () => {
                     href="/logout"
                     method="post"
                     as="button"
-                    class="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-white/10 rounded-lg transition-colors cursor-pointer"
+                    class="cursor-pointer rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-white/10 hover:text-rose-400"
                     title="Keluar dari Aplikasi"
                 >
-                    <LogOut class="w-4 h-4" />
+                    <LogOut class="h-4 w-4" />
                 </Link>
             </div>
         </div>
