@@ -412,5 +412,23 @@ class BukuIndukSystemTest extends TestCase
         ]);
         $respTahun->assertSessionHas('success');
         $this->assertDatabaseHas('master_tahun_pelajaran', ['tahun_pelajaran' => '2026/2027']);
+
+        // 5. Create new User via Users/Index.vue (UserController@store) and verify they can immediately log in and access dashboard without email verification
+        $respUser = $this->post('/users', [
+            'name' => 'Staf TU Baru',
+            'email' => 'tubaru@smk.sch.id',
+            'password' => 'password123',
+            'role' => 'tata_usaha',
+        ]);
+        $respUser->assertSessionHas('success');
+
+        $newUser = User::where('email', 'tubaru@smk.sch.id')->first();
+        $this->assertNotNull($newUser);
+        $this->assertNotNull($newUser->email_verified_at);
+
+        // Log in as the new user and verify direct access to /dashboard without email verification redirect
+        $this->actingAs($newUser)
+            ->get('/dashboard')
+            ->assertOk();
     }
 }
