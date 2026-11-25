@@ -14,19 +14,16 @@ class MasterTahunPelajaran extends Model
 
     protected $fillable = [
         'tahun_pelajaran',
-        'is_aktif',
     ];
-
-    protected function casts(): array
-    {
-        return [
-            'is_aktif' => 'boolean',
-        ];
-    }
 
     public function nilaiAkademik(): HasMany
     {
         return $this->hasMany(NilaiAkademik::class, 'tahun_pelajaran_id');
+    }
+
+    public function nilaiEkstrakurikuler(): HasMany
+    {
+        return $this->hasMany(NilaiEkstrakurikuler::class, 'tahun_pelajaran_id');
     }
 
     public function rekapSemester(): HasMany

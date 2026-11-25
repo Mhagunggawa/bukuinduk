@@ -36,6 +36,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::prefix('master-data')->name('master.')->group(function () {
             Route::get('/', [MasterDataController::class, 'index'])->name('index');
 
+            // Program Keahlian Induk
+            Route::post('/program', [MasterDataController::class, 'storeProgram'])->name('program.store');
+            Route::put('/program/{program}', [MasterDataController::class, 'updateProgram'])->name('program.update');
+            Route::delete('/program/{program}', [MasterDataController::class, 'destroyProgram'])->name('program.destroy');
+
             // Jurusan (Konsentrasi Keahlian)
             Route::post('/jurusan', [MasterDataController::class, 'storeJurusan'])->name('jurusan.store');
             Route::put('/jurusan/{jurusan}', [MasterDataController::class, 'updateJurusan'])->name('jurusan.update');
@@ -55,7 +60,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::post('/tahun', [MasterDataController::class, 'storeTahun'])->name('tahun.store');
             Route::put('/tahun/{tahun}', [MasterDataController::class, 'updateTahun'])->name('tahun.update');
             Route::delete('/tahun/{tahun}', [MasterDataController::class, 'destroyTahun'])->name('tahun.destroy');
-            Route::patch('/tahun/{tahun}/aktif', [MasterDataController::class, 'setTahunAktif'])->name('tahun.aktif');
         });
 
         // Manajemen User

@@ -35,24 +35,18 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
-        $activeTahun = null;
-        try {
-            $activeTahun = \App\Models\MasterTahunPelajaran::where('is_aktif', true)->value('tahun_pelajaran');
-        } catch (\Throwable $e) {
-            // In case DB is not yet ready or migrating
-        }
-
         return [
             ...parent::share($request),
             'name' => config('app.name'),
             'auth' => [
                 'user' => $request->user(),
             ],
-            'activeTahunPelajaran' => $activeTahun ?? '2025/2026',
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),
                 'error' => fn () => $request->session()->get('error'),
                 'import_errors' => fn () => $request->session()->get('import_errors'),
+                'unmatched_nis_list' => fn () => $request->session()->get('unmatched_nis_list'),
+                'invalid_file_types' => fn () => $request->session()->get('invalid_file_types'),
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
         ];

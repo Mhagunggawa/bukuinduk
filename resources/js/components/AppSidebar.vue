@@ -7,8 +7,6 @@ import {
     FileSpreadsheet,
     Database,
     UserCog,
-    GraduationCap,
-    LogOut,
     X,
 } from '@lucide/vue';
 import type { NavItem } from '@/types';
@@ -18,17 +16,19 @@ export interface NavSection {
     items: NavItem[];
 }
 
-withDefaults(
-    defineProps<{
-        open?: boolean;
-    }>(),
-    {
-        open: false,
-    },
-);
+interface Props {
+    open?: boolean;
+    collapsed?: boolean;
+}
+
+const props = withDefaults(defineProps<Props>(), {
+    open: false,
+    collapsed: false,
+});
 
 const emit = defineEmits<{
     (e: 'close'): void;
+    (e: 'toggle-collapse'): void;
 }>();
 
 const page = usePage();
@@ -42,29 +42,26 @@ const isNavActive = (path: string) => {
     return currentUrl.value.startsWith(path);
 };
 
-// 1. Kumpulan Pintasan Navigasi Utama (computed NavItem[])
-const mainNavItems = computed<NavItem[]>(() => {
-    const items: NavItem[] = [
-        {
-            title: 'Dashboard',
-            href: '/dashboard' as any,
-            icon: LayoutDashboard,
-        },
-        {
-            title: 'Direktori Siswa',
-            href: '/siswa' as any,
-            icon: Users,
-        },
-        {
-            title: 'Import Data Massal',
-            href: '/import' as any,
-            icon: FileSpreadsheet,
-        },
-    ];
-    return items;
-});
+// 1. Kumpulan Pintasan Navigasi Utama
+const mainNavItems = computed<NavItem[]>(() => [
+    {
+        title: 'Dashboard',
+        href: '/dashboard' as any,
+        icon: LayoutDashboard,
+    },
+    {
+        title: 'Direktori Siswa',
+        href: '/siswa' as any,
+        icon: Users,
+    },
+    {
+        title: 'Import Data Massal',
+        href: '/import' as any,
+        icon: FileSpreadsheet,
+    },
+]);
 
-// 2. Kumpulan Pintasan Master & Pengguna (computed NavItem[] - Khusus Role Admin / Super Admin)
+// 2. Kumpulan Pintasan Master & Pengguna (Khusus Admin / Super Admin)
 const masterNavItems = computed<NavItem[]>(() => {
     const items: NavItem[] = [];
     const role = (page.props.auth as any)?.user?.role;
@@ -79,13 +76,12 @@ const masterNavItems = computed<NavItem[]>(() => {
                 title: 'Manajemen Pengguna',
                 href: '/users' as any,
                 icon: UserCog,
-            },
+            }
         );
     }
     return items;
 });
 
-// 3. Kumpulan Bagian / Section pada AppSidebar dengan Title masing-masing
 const navSections = computed<NavSection[]>(() => {
     const sections: NavSection[] = [
         {
@@ -120,74 +116,83 @@ const closeSidebar = () => {
 </script>
 
 <template>
-    <!-- Mobile Sidebar Backdrop -->
+    <!-- Mobile Backdrop -->
     <div
         v-if="open"
-        class="fixed inset-0 z-40 bg-slate-950/60 backdrop-blur-xs md:hidden"
+        class="fixed inset-0 z-40 bg-slate-900/30 backdrop-blur-xs md:hidden"
         @click="closeSidebar"
     />
 
-    <!-- Sidebar: Clean Modern Deep Navy (w-64 bg-[#0B1736] text-white) -->
+    <!-- Sidebar: Clean White (#FFFFFF), Border Kanan Tipis (#E2E8F0) / Dark Mode Support -->
     <aside
         :class="[
-            'fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r border-slate-800/60 bg-[#0B1736] text-white shadow-2xl transition-transform duration-300 ease-in-out md:static md:translate-x-0 print:hidden',
+            'fixed inset-y-0 left-0 z-50 bg-white dark:bg-[#131F37] text-[#0F3A5F] dark:text-[#F1F5F9] flex flex-col transition-all duration-200 ease-in-out md:static md:translate-x-0 print:hidden border-r border-[#E2E8F0] dark:border-[#223354] shadow-sm md:shadow-none h-full shrink-0',
             open ? 'translate-x-0' : '-translate-x-full',
+            collapsed ? 'w-20' : 'w-64',
         ]"
     >
-        <!-- Sidebar Header / Logo -->
+        <!-- Header Sidebar -->
         <div
-            class="flex h-16 shrink-0 items-center justify-between border-b border-white/10 bg-[#070e24]/70 px-5"
+            :class="[
+                'h-16 flex items-center border-b border-[#E2E8F0] dark:border-[#223354] bg-white dark:bg-[#131F37] shrink-0 transition-all',
+                collapsed ? 'justify-center px-2' : 'justify-between px-4',
+            ]"
         >
             <Link
                 href="/dashboard"
-                class="group flex items-center gap-3"
-                title="E-Buku Induk SMK"
+                class="flex items-center gap-3.5 overflow-hidden select-none group"
+                title="SI KARANJI - Buku Induk SMK"
             >
-                <div
-                    class="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-tr from-blue-700 to-sky-500 text-white shadow-lg ring-2 shadow-blue-500/25 ring-white/15 transition-all group-hover:scale-105"
-                >
-                    <GraduationCap class="h-5 w-5" />
+                <!-- Logo Maskot SI KARANJI -->
+                <div class="shrink-0 flex items-center justify-center">
+                    <img
+                        src="/images/logo-full.webp"
+                        alt="SI KARANJI"
+                        :class="collapsed ? 'w-9 h-9 object-contain' : 'w-10.5 h-10.5 object-contain'"
+                        loading="eager"
+                    />
                 </div>
-                <div class="flex flex-col">
-                    <span
-                        class="text-sm leading-tight font-black tracking-wide text-white uppercase"
-                        >E-Buku Induk</span
-                    >
-                    <span
-                        class="text-[10px] font-semibold tracking-wider text-sky-300/90"
-                        >SMK AKADEMIK</span
-                    >
+
+                <!-- Teks SI KARANJI (HTML text, lebih besar & jelas) -->
+                <div v-if="!collapsed" class="flex flex-col min-w-0">
+                    <span class="font-bold text-base sm:text-[17px] tracking-tight text-[#0F3A5F] dark:text-[#F1F5F9] leading-none">
+                        SI KARANJI
+                    </span>
+                    <span class="text-xs sm:text-[10.7px] text-[#64748B] dark:text-[#94A3B8] font-medium tracking-tight leading-none mt-1">
+                        Buku Induk SMK Negeri 1 Gorontalo
+                    </span>
                 </div>
             </Link>
+
+            <!-- Tombol Tutup Mobile (Hanya muncul di Mobile Drawer) -->
             <button
-                class="cursor-pointer rounded-lg p-1 text-slate-400 hover:text-white md:hidden"
+                type="button"
+                class="md:hidden text-slate-400 hover:text-[#0F3A5F] dark:hover:text-white p-1.5 rounded-md hover:bg-slate-100 dark:hover:bg-[#1E293B] transition-colors cursor-pointer"
                 title="Tutup Menu"
+                aria-label="Tutup Menu"
                 @click="closeSidebar"
             >
-                <X class="h-5 w-5" />
+                <X class="w-5 h-5" />
             </button>
         </div>
 
-        <!-- Navigation Links (Kumpulan Pintasan Berdasarkan Tiap Bagian Title) -->
-        <div class="flex-1 space-y-6 overflow-y-auto px-3 py-5">
+        <!-- Navigation Links -->
+        <div class="flex-1 overflow-y-auto py-4 px-3 space-y-5">
             <div
                 v-for="(section, sIdx) in navSections"
                 :key="section.title"
-                :class="[
-                    'space-y-1.5',
-                    sIdx > 0 ? 'border-t border-white/10 pt-5' : '',
-                ]"
+                :class="['space-y-1', sIdx > 0 ? 'pt-4 border-t border-[#E2E8F0] dark:border-[#223354]' : '']"
             >
-                <!-- Title Tiap Bagian Sidebar (Jelas, Terbaca, Bersih) -->
+                <!-- Label Kelompok Menu -->
                 <div
-                    class="flex items-center justify-between px-3 pb-1 text-[11px] font-bold tracking-wider text-slate-400 uppercase"
-                    :title="section.title"
+                    v-if="!collapsed"
+                    class="px-2.5 pb-1.5 text-[10px] font-bold text-[#64748B] dark:text-[#94A3B8] uppercase tracking-wider select-none"
                 >
-                    <span>{{ section.title }}</span>
+                    {{ section.title }}
                 </div>
 
-                <!-- Daftar Pintasan dalam Bagian Tersebut -->
-                <div class="space-y-1">
+                <!-- Item Menu -->
+                <div class="space-y-0.5">
                     <Link
                         v-for="item in section.items"
                         :key="item.title"
@@ -195,72 +200,46 @@ const closeSidebar = () => {
                         :title="item.title"
                         :aria-label="item.title"
                         :class="[
-                            'group flex items-center gap-3 rounded-xl px-3 py-2.5 text-xs font-semibold transition-all',
+                            'flex items-center gap-3 px-2.5 py-2 rounded-[8px] text-xs transition-colors group relative select-none',
                             isNavActive(String(item.href))
-                                ? 'bg-blue-600 font-bold text-white shadow-md shadow-blue-600/30'
-                                : 'text-slate-300 hover:bg-white/5 hover:text-white',
+                                ? 'bg-[#EAF4FC] dark:bg-[#1E3A5F]/50 text-[#2B7CC2] dark:text-[#38BDF8] font-semibold border-l-[3px] border-[#2B7CC2] dark:border-[#38BDF8] rounded-l-none pl-[9px]'
+                                : 'text-[#64748B] dark:text-[#94A3B8] hover:text-[#0F3A5F] dark:hover:text-[#F1F5F9] hover:bg-[#F8FAFC] dark:hover:bg-[#1E293B]',
+                            collapsed ? 'justify-center px-0' : '',
                         ]"
                     >
                         <component
                             :is="item.icon"
                             v-if="item.icon"
                             :class="[
-                                'h-4 w-4 shrink-0 transition-colors',
+                                'w-4 h-4 shrink-0 transition-colors',
                                 isNavActive(String(item.href))
-                                    ? 'text-white'
-                                    : section.title.includes('Master')
-                                      ? 'text-amber-400 group-hover:text-amber-300'
-                                      : 'text-slate-400 group-hover:text-sky-400',
+                                    ? 'text-[#2B7CC2] dark:text-[#38BDF8]'
+                                    : 'text-[#64748B] dark:text-[#94A3B8] group-hover:text-[#0F3A5F] dark:group-hover:text-[#F1F5F9]',
                             ]"
                         />
-                        <span class="truncate">{{ item.title }}</span>
+                        <span v-if="!collapsed" class="truncate">{{ item.title }}</span>
                     </Link>
                 </div>
             </div>
         </div>
 
-        <!-- Modern User Card at Sidebar Bottom -->
-        <div class="shrink-0 border-t border-white/10 bg-[#070e24]/80 p-3">
-            <div
-                class="flex items-center justify-between gap-3 rounded-xl border border-white/10 bg-white/5 p-2.5"
-            >
-                <div class="flex min-w-0 items-center gap-2.5">
-                    <div
-                        class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gradient-to-tr from-blue-600 to-indigo-600 text-xs font-bold text-white ring-1 ring-white/20"
-                    >
-                        {{ userInitials }}
-                    </div>
-                    <div class="flex min-w-0 flex-col">
-                        <span
-                            class="truncate text-xs leading-tight font-bold text-white"
-                            >{{ user?.name || 'Pengguna' }}</span
-                        >
-                        <div class="mt-0.5 flex items-center gap-1.5">
-                            <span
-                                class="h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-400"
-                            ></span>
-                            <span
-                                class="text-[10px] font-semibold text-slate-300 uppercase"
-                            >
-                                {{
-                                    user?.role === 'admin'
-                                        ? 'Administrator'
-                                        : 'Tata Usaha'
-                                }}
-                            </span>
-                        </div>
-                    </div>
-                </div>
-
-                <Link
-                    href="/logout"
-                    method="post"
-                    as="button"
-                    class="cursor-pointer rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-white/10 hover:text-rose-400"
-                    title="Keluar dari Aplikasi"
-                >
-                    <LogOut class="h-4 w-4" />
-                </Link>
+        <!-- Bagian Bawah Sidebar: Identitas Aplikasi & Versi -->
+        <div class="p-4 border-t border-[#E2E8F0] dark:border-[#223354] bg-white dark:bg-[#131F37] shrink-0">
+            <div v-if="!collapsed" class="space-y-1 text-left select-none">
+                <h4 class="text-xs font-bold text-[#0F3A5F] dark:text-[#F1F5F9] tracking-wide uppercase">
+                    SI KARANJI
+                </h4>
+                <p class="text-[11px] text-[#64748B] dark:text-[#94A3B8] leading-snug">
+                    Sistem Informasi Buku Induk Siswa SMK
+                    Kelola Arsip, Rekap Administrasi, Nilai, dan Jejak Induk
+                </p>
+                <p class="text-[11px] text-[#94A3B8] dark:text-[#64748B] font-normal pt-0.5">
+                    Versi 1.0.0
+                </p>
+            </div>
+            <div v-else class="text-center py-1 select-none" title="SI KARANJI - Versi 1.0.0">
+                <span class="font-bold text-xs text-[#0F3A5F] dark:text-[#F1F5F9] block">SK</span>
+                <span class="text-[9px] text-[#64748B] dark:text-[#94A3B8] block">v1.0</span>
             </div>
         </div>
     </aside>

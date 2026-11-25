@@ -22,7 +22,7 @@ class MasterDataController extends Controller
             ->orderBy('nama_bidang_studi')
             ->get();
 
-        $programList = MasterProgramKeahlian::with('bidangStudi')
+        $programList = MasterProgramKeahlian::with(['bidangStudi', 'konsentrasiKeahlian'])
             ->orderBy('nama_program_keahlian')
             ->get();
 
@@ -37,7 +37,8 @@ class MasterDataController extends Controller
         $ekskulList = MasterEkstrakurikuler::orderBy('no_urut')
             ->get();
 
-        $tahunList = MasterTahunPelajaran::orderBy('tahun_pelajaran', 'desc')
+        $tahunList = MasterTahunPelajaran::withCount(['rekapSemester', 'nilaiAkademik'])
+            ->orderBy('tahun_pelajaran', 'desc')
             ->get();
 
         return Inertia::render('MasterData/Index', [
@@ -48,6 +49,44 @@ class MasterDataController extends Controller
             'ekskulList' => $ekskulList,
             'tahunList' => $tahunList,
         ]);
+    }
+
+    // --- Program Keahlian Induk ---
+    public function storeProgram(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'bidang_studi_id' => ['required', 'exists:master_bidang_studi,id'],
+            'kode' => ['required', 'string', 'max:20', 'unique:master_program_keahlian,kode'],
+            'nama_program_keahlian' => ['required', 'string', 'max:255'],
+        ]);
+
+        MasterProgramKeahlian::create($validated);
+
+        return redirect()->back()->with('success', 'Program keahlian induk berhasil ditambahkan.');
+    }
+
+    public function updateProgram(Request $request, MasterProgramKeahlian $program): RedirectResponse
+    {
+        $validated = $request->validate([
+            'bidang_studi_id' => ['required', 'exists:master_bidang_studi,id'],
+            'kode' => ['required', 'string', 'max:20', Rule::unique('master_program_keahlian')->ignore($program->id)],
+            'nama_program_keahlian' => ['required', 'string', 'max:255'],
+        ]);
+
+        $program->update($validated);
+
+        return redirect()->back()->with('success', 'Program keahlian induk berhasil diperbarui.');
+    }
+
+    public function destroyProgram(MasterProgramKeahlian $program): RedirectResponse
+    {
+        if ($program->konsentrasiKeahlian()->count() > 0) {
+            return redirect()->back()->with('error', 'Program keahlian tidak dapat dihapus karena masih menaungi konsentrasi keahlian.');
+        }
+
+        $program->delete();
+
+        return redirect()->back()->with('success', 'Program keahlian induk berhasil dihapus.');
     }
 
     // --- Jurusan (Konsentrasi Keahlian) ---
@@ -161,12 +200,7 @@ class MasterDataController extends Controller
     {
         $validated = $request->validate([
             'tahun_pelajaran' => ['required', 'string', 'max:20', 'unique:master_tahun_pelajaran,tahun_pelajaran'],
-            'is_aktif' => ['boolean'],
         ]);
-
-        if (! empty($validated['is_aktif'])) {
-            MasterTahunPelajaran::where('is_aktif', true)->update(['is_aktif' => false]);
-        }
 
         MasterTahunPelajaran::create($validated);
 
@@ -177,12 +211,7 @@ class MasterDataController extends Controller
     {
         $validated = $request->validate([
             'tahun_pelajaran' => ['required', 'string', 'max:20', Rule::unique('master_tahun_pelajaran')->ignore($tahun->id)],
-            'is_aktif' => ['boolean'],
         ]);
-
-        if (! empty($validated['is_aktif'])) {
-            MasterTahunPelajaran::where('id', '!=', $tahun->id)->update(['is_aktif' => false]);
-        }
 
         $tahun->update($validated);
 
@@ -194,13 +223,5 @@ class MasterDataController extends Controller
         $tahun->delete();
 
         return redirect()->back()->with('success', 'Tahun pelajaran berhasil dihapus.');
-    }
-
-    public function setTahunAktif(MasterTahunPelajaran $tahun): RedirectResponse
-    {
-        MasterTahunPelajaran::where('is_aktif', true)->update(['is_aktif' => false]);
-        $tahun->update(['is_aktif' => true]);
-
-        return redirect()->back()->with('success', "Tahun Pelajaran {$tahun->tahun_pelajaran} diaktifkan.");
     }
 }

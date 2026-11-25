@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { ref, watch, computed } from 'vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import {
     Search,
@@ -8,13 +8,30 @@ import {
     BookOpen,
     Edit3,
     Trash2,
-    X,
     Filter,
     UserCheck,
-    ChevronLeft,
-    ChevronRight,
     Camera,
+    RotateCcw,
+    User,
+    Users,
+    GraduationCap,
+    UploadCloud,
+    FileText,
+    Building2,
+    CheckCircle2,
+    X,
 } from '@lucide/vue';
+import BaseCard from '@/components/base/BaseCard.vue';
+import BaseButton from '@/components/base/BaseButton.vue';
+import BaseInput from '@/components/base/BaseInput.vue';
+import BaseSelect from '@/components/base/BaseSelect.vue';
+import BaseBadge from '@/components/base/BaseBadge.vue';
+import BaseTable from '@/components/base/BaseTable.vue';
+import BaseModal from '@/components/base/BaseModal.vue';
+import BaseConfirmModal from '@/components/base/BaseConfirmModal.vue';
+import EmptyState from '@/components/base/EmptyState.vue';
+import { formatJurusanName } from '@/lib/utils';
+import { useConfirmModal } from '@/composables/useConfirmModal';
 
 interface Konsentrasi {
     id: number;
@@ -78,7 +95,6 @@ const props = defineProps<{
     };
 }>();
 
-// Filter states
 const search = ref(props.filters.search || '');
 const jurusanId = ref(props.filters.jurusan_id || '');
 const kelas = ref(props.filters.kelas || '');
@@ -99,7 +115,7 @@ const applyFilters = () => {
             preserveState: true,
             preserveScroll: true,
             replace: true,
-        },
+        }
     );
 };
 
@@ -122,10 +138,25 @@ const resetFilters = () => {
     applyFilters();
 };
 
-// Modal Siswa (Create & Edit)
 const isModalOpen = ref(false);
 const isEditing = ref(false);
 const editingSiswaId = ref<number | null>(null);
+const activeModalTab = ref<'identitas' | 'ortu' | 'riwayat'>('identitas');
+const currentPasfotoUrl = ref<string | null>(null);
+const fileInputRef = ref<HTMLInputElement | null>(null);
+const pasfotoError = ref<string>('');
+
+const triggerFileInput = () => {
+    fileInputRef.value?.click();
+};
+
+const removeSelectedPhoto = () => {
+    form.pasfoto = null;
+    pasfotoError.value = '';
+    if (fileInputRef.value) {
+        fileInputRef.value.value = '';
+    }
+};
 
 const form = useForm({
     nis: '',
@@ -158,6 +189,8 @@ const form = useForm({
 const openCreateModal = () => {
     isEditing.value = false;
     editingSiswaId.value = null;
+    currentPasfotoUrl.value = null;
+    activeModalTab.value = 'identitas';
     form.reset();
     form.clearErrors();
     form.warga_negara = 'WNI';
@@ -169,6 +202,8 @@ const openCreateModal = () => {
 const openEditModal = (item: SiswaItem) => {
     isEditing.value = true;
     editingSiswaId.value = item.id;
+    currentPasfotoUrl.value = item.pasfoto_url || null;
+    activeModalTab.value = 'identitas';
     form.reset();
     form.clearErrors();
 
@@ -176,36 +211,24 @@ const openEditModal = (item: SiswaItem) => {
     form.nisn = item.nisn || '';
     form.nama_lengkap = item.nama_lengkap || '';
     form.jenis_kelamin = item.jenis_kelamin || 'L';
-    form.konsentrasi_keahlian_id = item.konsentrasi_keahlian_id
-        ? String(item.konsentrasi_keahlian_id)
-        : '';
+    form.konsentrasi_keahlian_id = item.konsentrasi_keahlian_id ? String(item.konsentrasi_keahlian_id) : '';
     form.kelas_saat_ini = item.kelas_saat_ini || '';
     form.tempat_lahir = item.tempat_lahir || '';
-    form.tanggal_lahir = item.tanggal_lahir
-        ? item.tanggal_lahir.substring(0, 10)
-        : '';
+    form.tanggal_lahir = item.tanggal_lahir ? item.tanggal_lahir.substring(0, 10) : '';
     form.warga_negara = item.warga_negara || 'WNI';
     form.agama = item.agama || 'Islam';
     form.alamat_siswa = item.alamat_siswa || '';
     form.nama_orang_tua = item.nama_orang_tua || '';
     form.pekerjaan_orang_tua = item.pekerjaan_orang_tua || '';
     form.alamat_orang_tua = item.alamat_orang_tua || '';
-    form.diterima_tanggal = item.diterima_tanggal
-        ? item.diterima_tanggal.substring(0, 10)
-        : '';
+    form.diterima_tanggal = item.diterima_tanggal ? item.diterima_tanggal.substring(0, 10) : '';
     form.diterima_asal_sekolah = item.diterima_asal_sekolah || '';
     form.diterima_nomor_sttb = item.diterima_nomor_sttb || '';
-    form.diterima_tanggal_sttb = item.diterima_tanggal_sttb
-        ? item.diterima_tanggal_sttb.substring(0, 10)
-        : '';
-    form.keluar_tanggal = item.keluar_tanggal
-        ? item.keluar_tanggal.substring(0, 10)
-        : '';
+    form.diterima_tanggal_sttb = item.diterima_tanggal_sttb ? item.diterima_tanggal_sttb.substring(0, 10) : '';
+    form.keluar_tanggal = item.keluar_tanggal ? item.keluar_tanggal.substring(0, 10) : '';
     form.keluar_alasan = item.keluar_alasan || '';
     form.tamat_nomor_sttb = item.tamat_nomor_sttb || '';
-    form.tamat_tanggal_sttb = item.tamat_tanggal_sttb
-        ? item.tamat_tanggal_sttb.substring(0, 10)
-        : '';
+    form.tamat_tanggal_sttb = item.tamat_tanggal_sttb ? item.tamat_tanggal_sttb.substring(0, 10) : '';
     form.keterangan_lain_lain = item.keterangan_lain_lain || '';
     form.status_siswa = item.status_siswa || 'AKTIF';
     form.pasfoto = null;
@@ -217,16 +240,35 @@ const closeModal = () => {
     isModalOpen.value = false;
 };
 
+const ALLOWED_PHOTO_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp'];
+const ALLOWED_PHOTO_MIMES = ['image/jpeg', 'image/png', 'image/webp'];
+
 const handlePhotoChange = (e: Event) => {
     const input = e.target as HTMLInputElement;
-    if (input.files && input.files[0]) {
-        form.pasfoto = input.files[0];
+    const file = input.files?.[0];
+    if (!file) return;
+
+    const ext = file.name.split('.').pop()?.toLowerCase() || '';
+    if (!ALLOWED_PHOTO_EXTENSIONS.includes(ext) || (file.type && !ALLOWED_PHOTO_MIMES.includes(file.type))) {
+        pasfotoError.value = `Tipe file keliru (.${ext.toUpperCase()})! Gunakan foto format JPG, JPEG, PNG, atau WEBP.`;
+        form.pasfoto = null;
+        input.value = '';
+        return;
     }
+
+    if (file.size > 2 * 1024 * 1024) {
+        pasfotoError.value = 'Ukuran file foto terlalu besar (Maksimal 2MB).';
+        form.pasfoto = null;
+        input.value = '';
+        return;
+    }
+
+    pasfotoError.value = '';
+    form.pasfoto = file;
 };
 
 const submitForm = () => {
     if (isEditing.value && editingSiswaId.value) {
-        // Because files with PUT requires FormData with _method='PUT'
         form.transform((data) => ({
             ...data,
             _method: 'PUT',
@@ -244,644 +286,498 @@ const submitForm = () => {
     }
 };
 
+const {
+    isOpen: isConfirmOpen,
+    isLoading: isConfirmLoading,
+    options: confirmOptions,
+    openConfirm,
+    closeConfirm,
+    handleConfirm,
+} = useConfirmModal();
+
 const deleteSiswa = (item: SiswaItem) => {
-    if (
-        confirm(
-            `Apakah Anda yakin ingin menghapus data siswa ${item.nama_lengkap} (NISN: ${item.nisn})? Data nilai dan riwayat buku induk siswa ini akan ikut terhapus.`,
-        )
-    ) {
-        router.delete(`/siswa/${item.id}`);
-    }
+    openConfirm({
+        title: 'Hapus Data Siswa',
+        message: 'Seluruh berkas profil, rekaman nilai rapor, dan lembar buku induk siswa ini akan dihapus permanen.',
+        itemInfo: item.nama_lengkap,
+        subInfo: `NIS: ${item.nis} • NISN: ${item.nisn} • ${item.kelas_saat_ini || '-'} (${item.konsentrasi_keahlian?.kode_singkat || '-'})`,
+        confirmText: 'Ya, Hapus Siswa',
+        variant: 'danger',
+        onConfirm: () => {
+            router.delete(`/siswa/${item.id}`);
+        },
+    });
 };
+
+const tableColumns = [
+    { key: 'foto', label: 'Foto', width: '56px', align: 'center' as const },
+    { key: 'nis', label: 'NIS / NISN' },
+    { key: 'nama', label: 'Nama Lengkap' },
+    { key: 'jk', label: 'L/P', width: '48px', align: 'center' as const },
+    { key: 'kelas', label: 'Kelas' },
+    { key: 'jurusan', label: 'Konsentrasi Keahlian' },
+    { key: 'status', label: 'Status', align: 'center' as const },
+    { key: 'aksi', label: 'Aksi', align: 'right' as const },
+];
 </script>
 
 <template>
-    <Head title="Direktori Siswa" />
+    <Head title="Direktori Siswa - SI KARANJI" />
 
-    <div class="space-y-5">
-        <!-- Header Section -->
-        <div
-            class="flex flex-col justify-between gap-4 rounded-xl border border-slate-200/80 bg-white p-5 shadow-xs sm:flex-row sm:items-center"
-        >
+    <div class="space-y-5 max-w-7xl mx-auto">
+        <!-- Header Halaman -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-[10px] border border-[#E2E8F0] shadow-xs">
             <div>
-                <h1
-                    class="flex items-center gap-2 text-xl font-black tracking-tight text-blue-950 uppercase"
-                >
-                    <Users class="h-6 w-6 text-blue-600" />
+                <h1 class="text-lg sm:text-xl font-bold text-[#0F3A5F] tracking-tight">
                     Direktori Siswa
                 </h1>
-                <p class="mt-1 text-xs text-slate-500">
-                    Pencarian cepat, pengelolaan biodata siswa, dan akses
-                    langsung ke Lembar Hasil Prestasi Buku Induk.
+                <p class="text-xs text-[#64748B] mt-0.5">
+                    Pencarian data siswa, pengelolaan biodata, dan akses lembar Buku Induk
                 </p>
             </div>
 
-            <div class="flex flex-wrap items-center gap-2.5">
-                <Link
-                    href="/import"
-                    class="inline-flex items-center gap-2 rounded-lg border border-blue-600 px-3.5 py-2 text-xs font-bold text-blue-600 shadow-2xs transition-colors hover:bg-blue-50"
-                >
-                    <FileSpreadsheet class="h-4 w-4" />
+            <div class="flex items-center gap-2.5 shrink-0">
+                <BaseButton href="/import" variant="secondary" size="md">
+                    <FileSpreadsheet class="w-4 h-4 text-[#2B7CC2]" />
                     <span>Import Excel</span>
-                </Link>
+                </BaseButton>
 
-                <button
-                    type="button"
-                    class="inline-flex cursor-pointer items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-xs font-bold text-white shadow-xs transition-all hover:bg-blue-700 active:scale-95"
-                    @click="openCreateModal"
-                >
-                    <Plus class="h-4 w-4" />
-                    <span>+ Tambah Siswa</span>
-                </button>
+                <BaseButton variant="primary" size="md" @click="openCreateModal">
+                    <Plus class="w-4 h-4" />
+                    <span>Tambah Siswa</span>
+                </BaseButton>
             </div>
         </div>
 
-        <!-- Filter & Search Controls Bar -->
-        <div
-            class="space-y-3 rounded-xl border border-slate-200/80 bg-white p-4 shadow-xs"
-        >
-            <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                <!-- Search Input -->
+        <!-- Filter & Search Bar -->
+        <BaseCard padding="sm">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                 <div class="relative">
-                    <Search
-                        class="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-slate-400"
-                    />
+                    <Search class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                     <input
                         v-model="search"
                         type="text"
                         placeholder="Cari NIS, NISN, atau Nama Siswa..."
-                        class="w-full rounded-lg border border-slate-300 bg-slate-50/50 py-2 pr-3 pl-9 text-xs transition-all placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
+                        class="w-full pl-9 pr-3 py-2 rounded-[8px] border border-[#E2E8F0] text-xs sm:text-sm text-[#0F3A5F] bg-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#BFE3FA] focus:border-[#2B7CC2] transition-colors"
                     />
                 </div>
 
-                <!-- Filter Jurusan -->
-                <div>
-                    <select
-                        v-model="jurusanId"
-                        class="w-full rounded-lg border border-slate-300 bg-slate-50/50 px-3 py-2 text-xs transition-all focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
+                <BaseSelect v-model="jurusanId" placeholder="Semua Konsentrasi Keahlian">
+                    <option
+                        v-for="jurusan in jurusanList"
+                        :key="jurusan.id"
+                        :value="jurusan.id"
                     >
-                        <option value="">Semua Konsentrasi Keahlian</option>
-                        <option
-                            v-for="jurusan in jurusanList"
-                            :key="jurusan.id"
-                            :value="jurusan.id"
-                        >
-                            {{ jurusan.nama_konsentrasi }} ({{
-                                jurusan.kode_singkat
-                            }})
-                        </option>
-                    </select>
-                </div>
+                        {{ formatJurusanName(jurusan.nama_konsentrasi, jurusan.kode_singkat) }}
+                    </option>
+                </BaseSelect>
 
-                <!-- Filter Kelas -->
-                <div>
-                    <select
-                        v-model="kelas"
-                        class="w-full rounded-lg border border-slate-300 bg-slate-50/50 px-3 py-2 text-xs transition-all focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
-                    >
-                        <option value="">Semua Rombel / Kelas</option>
-                        <option v-for="k in kelasList" :key="k" :value="k">
-                            {{ k }}
-                        </option>
-                    </select>
-                </div>
+                <BaseSelect v-model="kelas" placeholder="Semua Rombel / Kelas">
+                    <option v-for="k in kelasList" :key="k" :value="k">
+                        {{ k }}
+                    </option>
+                </BaseSelect>
 
-                <!-- Filter Status -->
-                <div>
-                    <select
-                        v-model="status"
-                        class="w-full rounded-lg border border-slate-300 bg-slate-50/50 px-3 py-2 text-xs transition-all focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
-                    >
-                        <option value="">Semua Status Siswa</option>
-                        <option value="AKTIF">AKTIF</option>
-                        <option value="TAMAT">TAMAT / LULUS</option>
-                        <option value="KELUAR">PINDAH / KELUAR</option>
-                    </select>
-                </div>
+                <BaseSelect v-model="status" placeholder="Semua Status Siswa">
+                    <option value="AKTIF">AKTIF</option>
+                    <option value="TAMAT">TAMAT / LULUS</option>
+                    <option value="KELUAR">PINDAH / KELUAR</option>
+                </BaseSelect>
             </div>
 
-            <!-- Active Filter Indicator & Reset Button -->
+            <!-- Indicator Filter Aktif -->
             <div
                 v-if="search || jurusanId || kelas || status"
-                class="flex items-center justify-between border-t border-slate-100 pt-2 text-xs text-slate-500"
+                class="flex items-center justify-between pt-3 mt-3 border-t border-[#E2E8F0] text-xs text-[#64748B]"
             >
                 <span class="flex items-center gap-1.5 font-medium">
-                    <Filter class="h-3.5 w-3.5 text-blue-600" />
-                    Menampilkan hasil filter (Total:
-                    <span class="font-bold text-slate-800">{{
-                        siswa.total
-                    }}</span>
-                    siswa)
+                    <Filter class="w-3.5 h-3.5 text-[#2B7CC2]" />
+                    Filter aktif (Ditemukan: <strong class="text-[#0F3A5F]">{{ siswa.total }}</strong> siswa)
                 </span>
                 <button
                     type="button"
-                    class="font-semibold text-blue-600 hover:text-blue-800 hover:underline"
+                    class="text-xs font-semibold text-[#2B7CC2] hover:underline flex items-center gap-1 cursor-pointer"
                     @click="resetFilters"
                 >
-                    Reset Filter
+                    <RotateCcw class="w-3 h-3" />
+                    <span>Reset Filter</span>
                 </button>
             </div>
-        </div>
+        </BaseCard>
 
-        <!-- Table Siswa -->
-        <div
-            class="overflow-hidden rounded-xl border border-slate-200/80 bg-white shadow-xs"
-        >
-            <div class="overflow-x-auto">
-                <table class="w-full border-collapse text-left text-xs">
-                    <!-- Header Tabel Utama: bg-blue-900 text-white -->
-                    <thead
-                        class="bg-blue-900 text-[11px] font-bold tracking-wider text-white uppercase select-none"
+        <!-- Tabel Siswa -->
+        <BaseTable :columns="tableColumns" :is-empty="siswa.data.length === 0">
+            <tr
+                v-for="item in siswa.data"
+                :key="item.id"
+                class="hover:bg-[#F8FAFC] dark:hover:bg-[#1A2846] transition-colors"
+            >
+                <!-- Pasfoto -->
+                <td class="px-3 py-2 text-center">
+                    <div class="w-8 h-10 bg-slate-100 dark:bg-[#0B1120] border border-[#E2E8F0] dark:border-[#223354] rounded-[4px] overflow-hidden mx-auto flex items-center justify-center text-slate-400">
+                        <img
+                            v-if="item.pasfoto_url"
+                            :src="item.pasfoto_url"
+                            :alt="item.nama_lengkap"
+                            class="w-full h-full object-cover"
+                        />
+                        <UserCheck v-else class="w-4 h-4 text-slate-300 dark:text-slate-600" />
+                    </div>
+                </td>
+
+                <!-- NIS / NISN -->
+                <td class="px-4 py-2.5 font-mono text-xs text-[#64748B] dark:text-[#94A3B8] whitespace-nowrap">
+                    <div class="font-bold text-[#0F3A5F] dark:text-[#F1F5F9]">{{ item.nis }}</div>
+                    <div class="text-[11px]">{{ item.nisn }}</div>
+                </td>
+
+                <!-- Nama Lengkap -->
+                <td class="px-4 py-2.5 whitespace-nowrap">
+                    <Link
+                        :href="`/siswa/${item.id}/buku-induk`"
+                        class="font-semibold text-[#0F3A5F] dark:text-[#F1F5F9] hover:text-[#2B7CC2] dark:hover:text-[#38BDF8] transition-colors block"
                     >
-                        <tr>
-                            <th class="w-12 px-3 py-3 text-center">Foto</th>
-                            <th class="px-3 py-3 whitespace-nowrap">
-                                NIS / NISN
-                            </th>
-                            <th class="px-3 py-3">Nama Lengkap</th>
-                            <th class="w-10 px-3 py-3 text-center">L/P</th>
-                            <th class="px-3 py-3 whitespace-nowrap">Kelas</th>
-                            <th class="px-3 py-3 whitespace-nowrap">
-                                Konsentrasi Keahlian
-                            </th>
-                            <th class="px-3 py-3 text-center whitespace-nowrap">
-                                Status
-                            </th>
-                            <th
-                                class="w-40 px-3 py-3 text-center whitespace-nowrap"
-                            >
-                                Aksi
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-slate-200">
-                        <tr
-                            v-for="item in siswa.data"
-                            :key="item.id"
-                            class="transition-colors hover:bg-blue-50/60"
+                        {{ item.nama_lengkap }}
+                    </Link>
+                    <div class="text-[11px] text-[#64748B] dark:text-[#94A3B8]">
+                        {{ item.tempat_lahir || '-' }}, {{ item.tanggal_lahir ? item.tanggal_lahir.substring(0, 10) : '-' }}
+                    </div>
+                </td>
+
+                <!-- Jenis Kelamin -->
+                <td class="px-2 py-2.5 text-center whitespace-nowrap font-semibold">
+                    <BaseBadge :variant="item.jenis_kelamin === 'L' ? 'primary' : 'neutral'" size="sm">
+                        {{ item.jenis_kelamin }}
+                    </BaseBadge>
+                </td>
+
+                <!-- Kelas -->
+                <td class="px-4 py-2.5 whitespace-nowrap text-xs font-medium text-[#0F3A5F] dark:text-[#F1F5F9]">
+                    {{ item.kelas_saat_ini || '-' }}
+                </td>
+
+                <!-- Konsentrasi Keahlian -->
+                <td class="px-4 py-2.5 whitespace-nowrap text-xs">
+                    <div v-if="item.konsentrasi_keahlian" class="font-medium text-[#0F3A5F] dark:text-[#F1F5F9]">
+                        {{ formatJurusanName(item.konsentrasi_keahlian.nama_konsentrasi, item.konsentrasi_keahlian.kode_singkat) }}
+                    </div>
+                    <span v-else class="text-slate-400 dark:text-slate-500 italic">Belum ditentukan</span>
+                </td>
+
+                <!-- Status Siswa -->
+                <td class="px-4 py-2.5 text-center whitespace-nowrap">
+                    <BaseBadge
+                        v-if="item.status_siswa === 'AKTIF'"
+                        variant="success"
+                        size="sm"
+                        dot
+                    >
+                        AKTIF
+                    </BaseBadge>
+                    <BaseBadge
+                        v-else-if="item.status_siswa === 'TAMAT'"
+                        variant="primary"
+                        size="sm"
+                        dot
+                    >
+                        TAMAT
+                    </BaseBadge>
+                    <BaseBadge
+                        v-else
+                        variant="danger"
+                        size="sm"
+                        dot
+                    >
+                        KELUAR
+                    </BaseBadge>
+                </td>
+
+                <!-- Tombol Aksi -->
+                <td class="px-4 py-2.5 text-right whitespace-nowrap">
+                    <div class="flex items-center justify-end gap-1.5">
+                        <Link
+                            :href="`/siswa/${item.id}/buku-induk`"
+                            class="inline-flex items-center gap-1 px-2.5 py-1 rounded-[6px] bg-[#EAF4FC] dark:bg-[#1E3A5F]/60 hover:bg-[#BFE3FA]/50 dark:hover:bg-[#1E3A5F] text-[#2B7CC2] dark:text-[#38BDF8] border border-[#BFE3FA] dark:border-[#2B7CC2]/40 text-xs font-semibold transition-colors"
+                            title="Buka Buku Induk"
+                            aria-label="Buka Buku Induk"
                         >
-                            <!-- Pasfoto mini -->
-                            <td class="px-3 py-2.5 text-center">
-                                <div
-                                    class="mx-auto flex h-12 w-9 items-center justify-center overflow-hidden rounded border border-slate-300 bg-slate-100 text-slate-400 shadow-2xs"
-                                >
-                                    <img
-                                        v-if="item.pasfoto_url"
-                                        :src="item.pasfoto_url"
-                                        :alt="item.nama_lengkap"
-                                        class="h-full w-full object-cover"
-                                    />
-                                    <UserCheck
-                                        v-else
-                                        class="h-5 w-5 text-slate-300"
-                                    />
-                                </div>
-                            </td>
+                            <BookOpen class="w-3.5 h-3.5" />
+                            <span>Buku Induk</span>
+                        </Link>
 
-                            <!-- NIS / NISN -->
-                            <td
-                                class="px-3 py-2.5 font-mono text-[11px] whitespace-nowrap"
-                            >
-                                <div class="font-bold text-slate-800">
-                                    {{ item.nis }}
-                                </div>
-                                <div class="font-medium text-slate-500">
-                                    {{ item.nisn }}
-                                </div>
-                            </td>
+                        <button
+                            type="button"
+                            class="p-1.5 rounded-[6px] text-[#64748B] dark:text-[#94A3B8] hover:text-[#0F3A5F] dark:hover:text-[#38BDF8] hover:bg-slate-100 dark:hover:bg-[#223354] transition-colors cursor-pointer"
+                            title="Edit Biodata Siswa"
+                            aria-label="Edit Biodata Siswa"
+                            @click="openEditModal(item)"
+                        >
+                            <Edit3 class="w-3.5 h-3.5" />
+                        </button>
 
-                            <!-- Nama Lengkap -->
-                            <td class="px-3 py-2.5 whitespace-nowrap">
-                                <div
-                                    class="font-bold text-slate-900 transition-colors hover:text-blue-600"
-                                >
-                                    <Link
-                                        :href="`/siswa/${item.id}/buku-induk`"
-                                    >
-                                        {{ item.nama_lengkap }}
-                                    </Link>
-                                </div>
-                                <div class="text-[10px] text-slate-500">
-                                    {{ item.tempat_lahir || '-' }},
-                                    {{
-                                        item.tanggal_lahir
-                                            ? item.tanggal_lahir.substring(
-                                                  0,
-                                                  10,
-                                              )
-                                            : '-'
-                                    }}
-                                </div>
-                            </td>
+                        <button
+                            type="button"
+                            class="p-1.5 rounded-[6px] text-slate-400 dark:text-slate-500 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer"
+                            title="Hapus Siswa"
+                            aria-label="Hapus Siswa"
+                            @click="deleteSiswa(item)"
+                        >
+                            <Trash2 class="w-3.5 h-3.5" />
+                        </button>
+                    </div>
+                </td>
+            </tr>
 
-                            <!-- Jenis Kelamin -->
-                            <td
-                                class="px-3 py-2.5 text-center font-semibold whitespace-nowrap"
-                            >
-                                <span
-                                    :class="
-                                        item.jenis_kelamin === 'L'
-                                            ? 'bg-blue-50 text-blue-700'
-                                            : 'bg-rose-50 text-rose-700'
-                                    "
-                                    class="rounded border border-current px-1.5 py-0.5 text-[10px] font-bold"
-                                >
-                                    {{ item.jenis_kelamin }}
-                                </span>
-                            </td>
+            <template #empty>
+                <EmptyState
+                    title="Tidak ada data siswa ditemukan"
+                    description="Coba ubah kata kunci pencarian atau sesuaikan opsi filter di atas."
+                />
+            </template>
+        </BaseTable>
 
-                            <!-- Kelas -->
-                            <td
-                                class="px-3 py-2.5 font-semibold whitespace-nowrap text-slate-700"
-                            >
-                                {{ item.kelas_saat_ini || '-' }}
-                            </td>
-
-                            <!-- Konsentrasi Keahlian -->
-                            <td class="px-3 py-2.5 whitespace-nowrap">
-                                <div
-                                    v-if="item.konsentrasi_keahlian"
-                                    class="font-medium text-slate-800"
-                                >
-                                    {{
-                                        item.konsentrasi_keahlian
-                                            .nama_konsentrasi
-                                    }}
-                                    <span class="font-bold text-blue-600"
-                                        >({{
-                                            item.konsentrasi_keahlian
-                                                .kode_singkat
-                                        }})</span
-                                    >
-                                </div>
-                                <span v-else class="text-slate-400 italic"
-                                    >Belum ditentukan</span
-                                >
-                            </td>
-
-                            <!-- Status Siswa -->
-                            <td
-                                class="px-3 py-2.5 text-center whitespace-nowrap"
-                            >
-                                <span
-                                    v-if="item.status_siswa === 'AKTIF'"
-                                    class="inline-block rounded-full border border-emerald-300 bg-emerald-100 px-2.5 py-0.5 text-[10px] font-bold text-emerald-800"
-                                >
-                                    AKTIF
-                                </span>
-                                <span
-                                    v-else-if="item.status_siswa === 'TAMAT'"
-                                    class="inline-block rounded-full border border-blue-300 bg-blue-100 px-2.5 py-0.5 text-[10px] font-bold text-blue-800"
-                                >
-                                    TAMAT
-                                </span>
-                                <span
-                                    v-else
-                                    class="inline-block rounded-full border border-rose-300 bg-rose-100 px-2.5 py-0.5 text-[10px] font-bold text-rose-800"
-                                >
-                                    KELUAR
-                                </span>
-                            </td>
-
-                            <!-- Tombol Aksi -->
-                            <td
-                                class="px-3 py-2.5 text-center whitespace-nowrap"
-                            >
-                                <div
-                                    class="flex items-center justify-center gap-1.5"
-                                >
-                                    <!-- Buka Buku Induk -->
-                                    <Link
-                                        :href="`/siswa/${item.id}/buku-induk`"
-                                        class="inline-flex items-center gap-1 rounded bg-blue-600 px-2.5 py-1 text-[11px] font-bold text-white shadow-2xs transition-colors hover:bg-blue-700"
-                                        title="Buka Lembar Buku Induk"
-                                    >
-                                        <BookOpen class="h-3.5 w-3.5" />
-                                        <span>Buku Induk</span>
-                                    </Link>
-
-                                    <!-- Edit -->
-                                    <button
-                                        type="button"
-                                        class="cursor-pointer rounded p-1 text-slate-600 transition-colors hover:bg-blue-100 hover:text-blue-700"
-                                        title="Edit Biodata Siswa"
-                                        @click="openEditModal(item)"
-                                    >
-                                        <Edit3 class="h-3.5 w-3.5" />
-                                    </button>
-
-                                    <!-- Hapus -->
-                                    <button
-                                        type="button"
-                                        class="cursor-pointer rounded p-1 text-slate-400 transition-colors hover:bg-rose-50 hover:text-rose-600"
-                                        title="Hapus Siswa"
-                                        @click="deleteSiswa(item)"
-                                    >
-                                        <Trash2 class="h-3.5 w-3.5" />
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-
-                        <tr v-if="siswa.data.length === 0">
-                            <td
-                                colspan="8"
-                                class="py-10 text-center text-slate-400"
-                            >
-                                Tidak ada data siswa yang sesuai dengan kriteria
-                                pencarian.
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
+        <!-- Pagination -->
+        <div class="p-4 bg-white dark:bg-[#131F37] rounded-[10px] border border-[#E2E8F0] dark:border-[#223354] shadow-xs flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-[#64748B] dark:text-[#94A3B8]">
+            <div>
+                Menampilkan <strong class="text-[#0F3A5F] dark:text-[#F1F5F9]">{{ siswa.from || 0 }}</strong> - <strong class="text-[#0F3A5F] dark:text-[#F1F5F9]">{{ siswa.to || 0 }}</strong> dari <strong class="text-[#0F3A5F] dark:text-[#F1F5F9]">{{ siswa.total }}</strong> siswa
             </div>
 
-            <!-- Pagination Footer -->
-            <div
-                class="flex flex-col items-center justify-between gap-3 border-t border-slate-200 bg-slate-50 p-4 text-xs text-slate-600 sm:flex-row"
-            >
-                <div>
-                    Menampilkan
-                    <span class="font-bold text-slate-900">{{
-                        siswa.from || 0
-                    }}</span>
-                    sampai
-                    <span class="font-bold text-slate-900">{{
-                        siswa.to || 0
-                    }}</span>
-                    dari total
-                    <span class="font-bold text-slate-900">{{
-                        siswa.total
-                    }}</span>
-                    siswa
-                </div>
+            <div class="flex items-center gap-1">
+                <template v-for="(link, i) in siswa.links" :key="i">
+                    <!-- Halaman Aktif (Tidak perlu klik, tampil angka dengan warna aksen) -->
+                    <span
+                        v-if="link.active"
+                        class="min-w-8 h-8 px-2.5 rounded-[6px] text-xs font-bold bg-[#2B7CC2] dark:bg-[#2563EB] text-white shadow-xs inline-flex items-center justify-center select-none"
+                    >
+                        <span v-html="link.label" />
+                    </span>
 
-                <div class="flex items-center gap-1">
-                    <template v-for="(link, i) in siswa.links" :key="i">
-                        <Link
-                            v-if="link.url"
-                            :href="link.url"
-                            :class="[
-                                'rounded px-2.5 py-1.5 text-xs font-semibold transition-colors',
-                                link.active
-                                    ? 'bg-blue-600 text-white shadow-2xs'
-                                    : 'border border-slate-200 bg-white text-slate-700 hover:bg-slate-100',
-                            ]"
-                            v-html="link.label"
-                        />
-                        <span
-                            v-else
-                            class="px-2 py-1.5 text-xs text-slate-400"
-                            v-html="link.label"
-                        />
-                    </template>
-                </div>
+                    <!-- Halaman Lain yang Dapat Diklik -->
+                    <Link
+                        v-else-if="link.url"
+                        :href="link.url"
+                        class="min-w-8 h-8 px-2.5 rounded-[6px] text-xs font-medium bg-white dark:bg-[#1E293B] border border-[#E2E8F0] dark:border-[#223354] text-[#0F3A5F] dark:text-[#F1F5F9] hover:bg-slate-50 dark:hover:bg-[#283548] transition-colors cursor-pointer inline-flex items-center justify-center select-none"
+                    >
+                        <span v-html="link.label" />
+                    </Link>
+
+                    <!-- Tombol Disabled (Misal Previous / Next di ujung halaman) -->
+                    <span
+                        v-else
+                        class="min-w-8 h-8 px-2.5 rounded-[6px] text-xs font-medium text-slate-400 dark:text-slate-600 select-none inline-flex items-center justify-center opacity-70"
+                    >
+                        <span v-html="link.label" />
+                    </span>
+                </template>
             </div>
         </div>
-    </div>
 
-    <!-- Modal Tambah / Edit Siswa -->
-    <div
-        v-if="isModalOpen"
-        class="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-slate-950/60 p-4 backdrop-blur-xs"
-    >
-        <div
-            class="flex max-h-[90vh] w-full max-w-4xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl"
+        <!-- Modal Tambah / Edit Siswa -->
+        <BaseModal
+            :open="isModalOpen"
+            :title="isEditing ? 'Edit Data Siswa' : 'Tambah Siswa Baru'"
+            :description="isEditing ? 'Perbarui informasi biodata lengkap, data orang tua, dan riwayat siswa' : 'Isi formulir biodata lengkap siswa untuk dicatat pada Buku Induk'"
+            size="3xl"
+            @close="closeModal"
         >
-            <!-- Modal Header -->
-            <div
-                class="flex items-center justify-between bg-blue-900 px-6 py-4 text-white"
-            >
-                <div>
-                    <h3 class="text-base font-black tracking-wide uppercase">
-                        {{
-                            isEditing ? 'Edit Data Siswa' : 'Tambah Siswa Baru'
-                        }}
-                    </h3>
-                    <p class="text-xs text-blue-200">
-                        Isi informasi identitas lengkap siswa untuk dicatat pada
-                        Buku Induk.
-                    </p>
-                </div>
+            <!-- Hidden File Input for Pasfoto -->
+            <input
+                ref="fileInputRef"
+                type="file"
+                accept="image/*"
+                class="hidden"
+                @change="handlePhotoChange"
+            />
+
+            <!-- Sub-Tab Segmented Switcher (Modern & Rapi) -->
+            <div class="flex items-center gap-1.5 p-1 bg-[#F1F5F9] rounded-xl border border-[#E2E8F0] mb-5">
                 <button
                     type="button"
-                    class="rounded-lg p-1 text-blue-200 hover:text-white"
-                    @click="closeModal"
+                    :class="[
+                        'flex-1 flex items-center justify-center gap-2 py-2 px-3 text-xs rounded-lg transition-all cursor-pointer font-medium select-none',
+                        activeModalTab === 'identitas'
+                            ? 'bg-white text-[#2B7CC2] font-bold shadow-xs'
+                            : 'text-[#64748B] hover:text-[#0F3A5F] hover:bg-slate-200/50',
+                    ]"
+                    @click="activeModalTab = 'identitas'"
                 >
-                    <X class="h-5 w-5" />
+                    <User class="w-3.5 h-3.5" />
+                    <span>1. Identitas Pokok</span>
+                </button>
+                <button
+                    type="button"
+                    :class="[
+                        'flex-1 flex items-center justify-center gap-2 py-2 px-3 text-xs rounded-lg transition-all cursor-pointer font-medium select-none',
+                        activeModalTab === 'ortu'
+                            ? 'bg-white text-[#2B7CC2] font-bold shadow-xs'
+                            : 'text-[#64748B] hover:text-[#0F3A5F] hover:bg-slate-200/50',
+                    ]"
+                    @click="activeModalTab = 'ortu'"
+                >
+                    <Users class="w-3.5 h-3.5" />
+                    <span>2. Data Orang Tua / Wali</span>
+                </button>
+                <button
+                    type="button"
+                    :class="[
+                        'flex-1 flex items-center justify-center gap-2 py-2 px-3 text-xs rounded-lg transition-all cursor-pointer font-medium select-none',
+                        activeModalTab === 'riwayat'
+                            ? 'bg-white text-[#2B7CC2] font-bold shadow-xs'
+                            : 'text-[#64748B] hover:text-[#0F3A5F] hover:bg-slate-200/50',
+                    ]"
+                    @click="activeModalTab = 'riwayat'"
+                >
+                    <GraduationCap class="w-3.5 h-3.5" />
+                    <span>3. Riwayat Masuk & Lulus</span>
                 </button>
             </div>
 
-            <!-- Modal Body (Form) -->
-            <form
-                @submit.prevent="submitForm"
-                class="flex-1 space-y-6 overflow-y-auto p-6 text-xs"
-            >
-                <!-- Seksi 1: Identitas Pokok & Pasfoto -->
-                <div>
-                    <h4
-                        class="mb-3 border-b border-blue-100 pb-2 text-xs font-bold tracking-wide text-blue-900 uppercase"
-                    >
-                        1. Identitas Pokok Siswa
-                    </h4>
-                    <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
-                        <!-- Pasfoto Upload -->
-                        <div
-                            class="flex flex-col items-center justify-center rounded-xl border border-dashed border-slate-300 bg-slate-50 p-3 text-center"
-                        >
-                            <div
-                                class="mb-2 flex h-32 w-24 items-center justify-center overflow-hidden rounded border border-slate-200 bg-white shadow-2xs"
-                            >
-                                <img
-                                    v-if="form.pasfoto"
-                                    :src="URL.createObjectURL(form.pasfoto)"
-                                    class="h-full w-full object-cover"
-                                />
-                                <Camera v-else class="h-8 w-8 text-slate-300" />
-                            </div>
-                            <label
-                                class="cursor-pointer text-[11px] font-bold text-blue-600 hover:text-blue-800"
-                            >
-                                <span>Pilih Pasfoto 3x4</span>
-                                <input
-                                    type="file"
-                                    accept="image/*"
-                                    class="hidden"
-                                    @change="handlePhotoChange"
-                                />
-                            </label>
-                            <span class="mt-0.5 text-[10px] text-slate-400"
-                                >JPG / PNG, maks 2MB</span
-                            >
-                        </div>
+            <form id="siswaForm" @submit.prevent="submitForm" class="space-y-4 text-xs">
+                <!-- ================= TAB 1: IDENTITAS POKOK SISWA ================= -->
+                <div v-show="activeModalTab === 'identitas'" class="space-y-4">
+                    <!-- Kartu Atas: Pasfoto & Data Pokok -->
+                    <div class="p-4 bg-[#F8FAFC] rounded-xl border border-[#E2E8F0]">
+                        <div class="grid grid-cols-1 md:grid-cols-12 gap-5 items-start">
+                            <!-- Kolom Kiri: Pasfoto 3x4 Frame -->
+                            <div class="md:col-span-3 flex flex-col items-center justify-center text-center p-3 bg-white rounded-lg border border-[#E2E8F0] shadow-2xs">
+                                <div class="w-24 h-32 bg-[#F8FAFC] border-2 border-dashed border-[#CBD5E1] rounded-lg flex items-center justify-center overflow-hidden mb-2 relative shadow-inner">
+                                    <img
+                                        v-if="form.pasfoto"
+                                        :src="URL.createObjectURL(form.pasfoto)"
+                                        alt="Pratinjau Foto"
+                                        class="w-full h-full object-cover"
+                                    />
+                                    <img
+                                        v-else-if="currentPasfotoUrl"
+                                        :src="currentPasfotoUrl"
+                                        alt="Pasfoto Siswa"
+                                        class="w-full h-full object-cover"
+                                    />
+                                    <div v-else class="flex flex-col items-center justify-center text-slate-300">
+                                        <Camera class="w-7 h-7 mb-1" />
+                                        <span class="text-[9px] text-[#64748B] font-medium">Pasfoto 3x4</span>
+                                    </div>
+                                </div>
 
-                        <!-- NIS, NISN, Nama, JK, Jurusan, Kelas -->
-                        <div
-                            class="grid grid-cols-1 gap-3 sm:grid-cols-2 md:col-span-2"
-                        >
-                            <div>
-                                <label
-                                    class="mb-1 block font-bold text-slate-700"
-                                    >NIS (Wajib) *</label
-                                >
-                                <input
-                                    v-model="form.nis"
-                                    type="text"
-                                    required
-                                    class="w-full rounded-lg border px-3 py-2 focus:ring-2 focus:ring-blue-500"
-                                    :class="
-                                        form.errors.nis
-                                            ? 'border-rose-500 bg-rose-50'
-                                            : 'border-slate-300'
-                                    "
-                                />
-                                <span
-                                    v-if="form.errors.nis"
-                                    class="text-[10px] text-rose-600"
-                                    >{{ form.errors.nis }}</span
-                                >
-                            </div>
-
-                            <div>
-                                <label
-                                    class="mb-1 block font-bold text-slate-700"
-                                    >NISN (Wajib, 10 Digit) *</label
-                                >
-                                <input
-                                    v-model="form.nisn"
-                                    type="text"
-                                    required
-                                    class="w-full rounded-lg border px-3 py-2 focus:ring-2 focus:ring-blue-500"
-                                    :class="
-                                        form.errors.nisn
-                                            ? 'border-rose-500 bg-rose-50'
-                                            : 'border-slate-300'
-                                    "
-                                />
-                                <span
-                                    v-if="form.errors.nisn"
-                                    class="text-[10px] text-rose-600"
-                                    >{{ form.errors.nisn }}</span
-                                >
-                            </div>
-
-                            <div class="sm:col-span-2">
-                                <label
-                                    class="mb-1 block font-bold text-slate-700"
-                                    >Nama Lengkap Siswa *</label
-                                >
-                                <input
-                                    v-model="form.nama_lengkap"
-                                    type="text"
-                                    required
-                                    class="w-full rounded-lg border px-3 py-2 uppercase focus:ring-2 focus:ring-blue-500"
-                                    :class="
-                                        form.errors.nama_lengkap
-                                            ? 'border-rose-500 bg-rose-50'
-                                            : 'border-slate-300'
-                                    "
-                                />
-                            </div>
-
-                            <div>
-                                <label
-                                    class="mb-1 block font-bold text-slate-700"
-                                    >Jenis Kelamin *</label
-                                >
-                                <select
-                                    v-model="form.jenis_kelamin"
-                                    class="w-full rounded-lg border border-slate-300 px-3 py-2"
-                                >
-                                    <option value="L">Laki-Laki (L)</option>
-                                    <option value="P">Perempuan (P)</option>
-                                </select>
-                            </div>
-
-                            <div>
-                                <label
-                                    class="mb-1 block font-bold text-slate-700"
-                                    >Konsentrasi Keahlian (Jurusan)</label
-                                >
-                                <select
-                                    v-model="form.konsentrasi_keahlian_id"
-                                    class="w-full rounded-lg border border-slate-300 px-3 py-2"
-                                >
-                                    <option value="">
-                                        -- Pilih Jurusan --
-                                    </option>
-                                    <option
-                                        v-for="j in jurusanList"
-                                        :key="j.id"
-                                        :value="j.id"
+                                <div class="flex items-center gap-1.5 w-full">
+                                    <BaseButton
+                                        type="button"
+                                        variant="secondary"
+                                        size="sm"
+                                        class="flex-1 text-[11px] py-1"
+                                        @click="triggerFileInput"
                                     >
-                                        {{ j.nama_konsentrasi }} ({{
-                                            j.kode_singkat
-                                        }})
-                                    </option>
-                                </select>
+                                        <UploadCloud class="w-3 h-3 mr-1 text-[#2B7CC2]" />
+                                        <span>{{ form.pasfoto || currentPasfotoUrl ? 'Ganti Foto' : 'Pilih Foto' }}</span>
+                                    </BaseButton>
+
+                                    <button
+                                        v-if="form.pasfoto"
+                                        type="button"
+                                        class="p-1 rounded text-rose-500 hover:bg-rose-50 transition-colors"
+                                        title="Batal pilih foto"
+                                        @click="removeSelectedPhoto"
+                                    >
+                                        <X class="w-3.5 h-3.5" />
+                                    </button>
+                                </div>
+                                <span class="text-[9.5px] text-[#64748B] mt-1.5">Format JPG/PNG/WEBP, maks. 2MB</span>
+                                <span v-if="pasfotoError || form.errors.pasfoto" class="text-[10px] font-semibold text-rose-600 mt-1 leading-tight">
+                                    {{ pasfotoError || form.errors.pasfoto }}
+                                </span>
                             </div>
 
-                            <div>
-                                <label
-                                    class="mb-1 block font-bold text-slate-700"
-                                    >Rombel / Kelas Saat Ini</label
-                                >
-                                <input
-                                    v-model="form.kelas_saat_ini"
-                                    type="text"
-                                    placeholder="Contoh: X TKJ 1"
-                                    class="w-full rounded-lg border border-slate-300 px-3 py-2"
+                            <!-- Kolom Kanan: Form Data Identitas Pokok -->
+                            <div class="md:col-span-9 space-y-3">
+                                <!-- Baris 1: NIS & NISN -->
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    <BaseInput
+                                        v-model="form.nis"
+                                        label="NIS (Nomor Induk Siswa)"
+                                        placeholder="Contoh: 24251001"
+                                        required
+                                        :error="form.errors.nis"
+                                    />
+                                    <BaseInput
+                                        v-model="form.nisn"
+                                        label="NISN (10 Digit Nasional)"
+                                        placeholder="Contoh: 0081234567"
+                                        required
+                                        :error="form.errors.nisn"
+                                    />
+                                </div>
+
+                                <!-- Baris 2: Nama Lengkap Siswa -->
+                                <BaseInput
+                                    v-model="form.nama_lengkap"
+                                    label="Nama Lengkap Siswa"
+                                    placeholder="Nama lengkap sesuai ijazah SMP"
+                                    required
+                                    class="uppercase"
+                                    :error="form.errors.nama_lengkap"
                                 />
-                            </div>
 
-                            <div>
-                                <label
-                                    class="mb-1 block font-bold text-slate-700"
-                                    >Status Siswa *</label
+                                <!-- Baris 3: Konsentrasi Keahlian (Jurusan) Diberi Lebar Penuh agar Tidak Terpotong -->
+                                <BaseSelect
+                                    v-model="form.konsentrasi_keahlian_id"
+                                    label="Konsentrasi Keahlian (Jurusan)"
                                 >
-                                <select
-                                    v-model="form.status_siswa"
-                                    class="w-full rounded-lg border border-slate-300 px-3 py-2 font-bold"
-                                >
-                                    <option value="AKTIF">AKTIF</option>
-                                    <option value="TAMAT">TAMAT / LULUS</option>
-                                    <option value="KELUAR">
-                                        PINDAH / KELUAR
+                                    <option value="">-- Pilih Konsentrasi Keahlian / Jurusan --</option>
+                                    <option v-for="j in jurusanList" :key="j.id" :value="j.id">
+                                        {{ formatJurusanName(j.nama_konsentrasi, j.kode_singkat) }}
                                     </option>
-                                </select>
+                                </BaseSelect>
+
+                                <!-- Baris 4: Jenis Kelamin, Rombel, & Status Keaktifan -->
+                                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                    <BaseSelect
+                                        v-model="form.jenis_kelamin"
+                                        label="Jenis Kelamin"
+                                        required
+                                    >
+                                        <option value="L">Laki-Laki (L)</option>
+                                        <option value="P">Perempuan (P)</option>
+                                    </BaseSelect>
+
+                                    <BaseInput
+                                        v-model="form.kelas_saat_ini"
+                                        label="Rombel / Kelas Saat Ini"
+                                        placeholder="Contoh: X TKJ 1"
+                                    />
+
+                                    <BaseSelect
+                                        v-model="form.status_siswa"
+                                        label="Status Siswa"
+                                        required
+                                    >
+                                        <option value="AKTIF">AKTIF</option>
+                                        <option value="TAMAT">TAMAT / LULUS</option>
+                                        <option value="KELUAR">PINDAH / KELUAR</option>
+                                    </BaseSelect>
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Biodata Detail -->
-                    <div class="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-4">
-                        <div>
-                            <label class="mb-1 block font-bold text-slate-700"
-                                >Tempat Lahir</label
-                            >
-                            <input
+                    <!-- Kartu Bawah: Kelahiran, Agama & Alamat Domisili -->
+                    <div class="p-4 bg-[#F8FAFC] rounded-xl border border-[#E2E8F0] space-y-3">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <BaseInput
                                 v-model="form.tempat_lahir"
-                                type="text"
-                                class="w-full rounded-lg border border-slate-300 px-3 py-2"
+                                label="Tempat Lahir"
+                                placeholder="Kota / Kabupaten Lahir"
                             />
-                        </div>
-                        <div>
-                            <label class="mb-1 block font-bold text-slate-700"
-                                >Tanggal Lahir</label
-                            >
-                            <input
+                            <BaseInput
                                 v-model="form.tanggal_lahir"
                                 type="date"
-                                class="w-full rounded-lg border border-slate-300 px-3 py-2"
+                                label="Tanggal Lahir"
                             />
                         </div>
-                        <div>
-                            <label class="mb-1 block font-bold text-slate-700"
-                                >Agama</label
-                            >
-                            <select
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <BaseSelect
                                 v-model="form.agama"
-                                class="w-full rounded-lg border border-slate-300 px-3 py-2"
+                                label="Agama"
                             >
                                 <option value="Islam">Islam</option>
                                 <option value="Kristen">Kristen</option>
@@ -889,196 +785,192 @@ const deleteSiswa = (item: SiswaItem) => {
                                 <option value="Hindu">Hindu</option>
                                 <option value="Buddha">Buddha</option>
                                 <option value="Konghucu">Konghucu</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="mb-1 block font-bold text-slate-700"
-                                >Warga Negara</label
-                            >
-                            <input
+                            </BaseSelect>
+                            <BaseInput
                                 v-model="form.warga_negara"
-                                type="text"
-                                class="w-full rounded-lg border border-slate-300 px-3 py-2"
+                                label="Kewarganegaraan"
+                                placeholder="WNI"
                             />
                         </div>
-                        <div class="sm:col-span-4">
-                            <label class="mb-1 block font-bold text-slate-700"
-                                >Alamat Tempat Tinggal Siswa</label
-                            >
+
+                        <div class="space-y-1.5">
+                            <label class="block text-xs font-semibold text-[#0F3A5F]">Alamat Tinggal / Domisili Siswa</label>
                             <textarea
                                 v-model="form.alamat_siswa"
                                 rows="2"
-                                class="w-full rounded-lg border border-slate-300 px-3 py-2"
-                            ></textarea>
+                                placeholder="Alamat jalan, nomor rumah, RT/RW, kelurahan, kecamatan, kota..."
+                                class="w-full bg-white text-xs text-[#0F3A5F] rounded-[8px] border border-[#E2E8F0] p-2.5 focus:outline-none focus:ring-2 focus:ring-[#BFE3FA] focus:border-[#2B7CC2] transition-colors"
+                            />
                         </div>
                     </div>
                 </div>
 
-                <!-- Seksi 2: Data Orang Tua -->
-                <div>
-                    <h4
-                        class="mb-3 border-b border-blue-100 pb-2 text-xs font-bold tracking-wide text-blue-900 uppercase"
-                    >
-                        2. Data Orang Tua / Wali
-                    </h4>
-                    <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                        <div>
-                            <label class="mb-1 block font-bold text-slate-700"
-                                >Nama Orang Tua / Wali</label
-                            >
-                            <input
+                <!-- ================= TAB 2: DATA ORANG TUA / WALI ================= -->
+                <div v-show="activeModalTab === 'ortu'" class="space-y-4">
+                    <div class="p-5 bg-[#F8FAFC] rounded-xl border border-[#E2E8F0] space-y-4">
+                        <div class="flex items-start gap-2.5 pb-3 border-b border-[#E2E8F0]">
+                            <div class="w-8 h-8 rounded-lg bg-[#EAF4FC] text-[#2B7CC2] flex items-center justify-center shrink-0">
+                                <Users class="w-4 h-4" />
+                            </div>
+                            <div>
+                                <h4 class="text-xs font-bold text-[#0F3A5F]">Data Orang Tua / Wali Siswa</h4>
+                                <p class="text-[11px] text-[#64748B]">
+                                    Informasi ini akan dicatat dan dicetak pada lembar resmi Buku Induk bagian Data Orang Tua / Wali.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <BaseInput
                                 v-model="form.nama_orang_tua"
-                                type="text"
-                                class="w-full rounded-lg border border-slate-300 px-3 py-2"
+                                label="Nama Lengkap Orang Tua / Wali"
+                                placeholder="Nama Ayah, Ibu, atau Wali Murid"
                             />
-                        </div>
-                        <div>
-                            <label class="mb-1 block font-bold text-slate-700"
-                                >Pekerjaan Orang Tua</label
-                            >
-                            <input
+                            <BaseInput
                                 v-model="form.pekerjaan_orang_tua"
-                                type="text"
-                                class="w-full rounded-lg border border-slate-300 px-3 py-2"
+                                label="Pekerjaan Orang Tua / Wali"
+                                placeholder="Contoh: Wiraswasta / Karyawan / PNS"
                             />
                         </div>
-                        <div class="sm:col-span-2">
-                            <label class="mb-1 block font-bold text-slate-700"
-                                >Alamat Orang Tua / Rumah</label
-                            >
+
+                        <div class="space-y-1.5">
+                            <label class="block text-xs font-semibold text-[#0F3A5F]">Alamat Rumah / Tempat Tinggal Orang Tua</label>
                             <textarea
                                 v-model="form.alamat_orang_tua"
-                                rows="2"
-                                class="w-full rounded-lg border border-slate-300 px-3 py-2"
-                            ></textarea>
+                                rows="3"
+                                placeholder="Alamat lengkap tempat tinggal orang tua / wali..."
+                                class="w-full bg-white text-xs text-[#0F3A5F] rounded-[8px] border border-[#E2E8F0] p-2.5 focus:outline-none focus:ring-2 focus:ring-[#BFE3FA] focus:border-[#2B7CC2] transition-colors"
+                            />
                         </div>
                     </div>
                 </div>
 
-                <!-- Seksi 3: Diterima, Keluar & Tamat -->
-                <div>
-                    <h4
-                        class="mb-3 border-b border-blue-100 pb-2 text-xs font-bold tracking-wide text-blue-900 uppercase"
-                    >
-                        3. Riwayat Masuk, Keluar & Tamat
-                    </h4>
-                    <div class="grid grid-cols-1 gap-3 sm:grid-cols-4">
-                        <div>
-                            <label class="mb-1 block font-bold text-slate-700"
-                                >Diterima Mulai Tgl</label
-                            >
-                            <input
+                <!-- ================= TAB 3: RIWAYAT PENERIMAAN & KELULUSAN ================= -->
+                <div v-show="activeModalTab === 'riwayat'" class="space-y-4">
+                    <!-- Seksi 1: Riwayat Penerimaan Masuk -->
+                    <div class="p-4 bg-[#F8FAFC] rounded-xl border border-[#E2E8F0] space-y-3">
+                        <div class="flex items-center gap-2 pb-2 border-b border-[#E2E8F0]">
+                            <FileText class="w-4 h-4 text-[#2B7CC2]" />
+                            <h4 class="text-xs font-bold text-[#0F3A5F] uppercase tracking-wide">
+                                1. Riwayat Penerimaan Siswa Baru
+                            </h4>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <BaseInput
                                 v-model="form.diterima_tanggal"
                                 type="date"
-                                class="w-full rounded-lg border border-slate-300 px-3 py-2"
+                                label="Diterima Mulai Tanggal"
                             />
-                        </div>
-                        <div class="sm:col-span-2">
-                            <label class="mb-1 block font-bold text-slate-700"
-                                >Diterima Asal Sekolah</label
-                            >
-                            <input
+                            <BaseInput
                                 v-model="form.diterima_asal_sekolah"
-                                type="text"
-                                class="w-full rounded-lg border border-slate-300 px-3 py-2"
+                                label="Asal Sekolah (SMP / MTs)"
+                                placeholder="Nama SMP/MTs asal"
                             />
                         </div>
-                        <div>
-                            <label class="mb-1 block font-bold text-slate-700"
-                                >Nomor STTB SMP</label
-                            >
-                            <input
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <BaseInput
                                 v-model="form.diterima_nomor_sttb"
-                                type="text"
-                                class="w-full rounded-lg border border-slate-300 px-3 py-2"
+                                label="Nomor STTB / Ijazah SMP"
+                                placeholder="Contoh: DN-01/D-SMP/..."
                             />
-                        </div>
-                    </div>
-
-                    <div
-                        class="mt-3 grid grid-cols-1 gap-3 border-t border-slate-100 pt-3 sm:grid-cols-3"
-                    >
-                        <div>
-                            <label class="mb-1 block font-bold text-slate-700"
-                                >Meninggalkan Sekolah (Tgl)</label
-                            >
-                            <input
-                                v-model="form.keluar_tanggal"
+                            <BaseInput
+                                v-model="form.diterima_tanggal_sttb"
                                 type="date"
-                                class="w-full rounded-lg border border-slate-300 px-3 py-2"
-                            />
-                        </div>
-                        <div class="sm:col-span-2">
-                            <label class="mb-1 block font-bold text-slate-700"
-                                >Alasan Keluar / Pindah</label
-                            >
-                            <input
-                                v-model="form.keluar_alasan"
-                                type="text"
-                                class="w-full rounded-lg border border-slate-300 px-3 py-2"
+                                label="Tanggal Ijazah / STTB SMP"
                             />
                         </div>
                     </div>
 
-                    <div
-                        class="mt-3 grid grid-cols-1 gap-3 border-t border-slate-100 pt-3 sm:grid-cols-3"
-                    >
-                        <div>
-                            <label class="mb-1 block font-bold text-slate-700"
-                                >Nomor Ijazah/STTB SMK (Tamat)</label
-                            >
-                            <input
-                                v-model="form.tamat_nomor_sttb"
-                                type="text"
-                                class="w-full rounded-lg border border-slate-300 px-3 py-2"
-                            />
+                    <!-- Seksi 2: Status Kelulusan / Tamat Belajar -->
+                    <div class="p-4 bg-[#F8FAFC] rounded-xl border border-[#E2E8F0] space-y-3">
+                        <div class="flex items-center gap-2 pb-2 border-b border-[#E2E8F0]">
+                            <GraduationCap class="w-4 h-4 text-[#2B7CC2]" />
+                            <h4 class="text-xs font-bold text-[#0F3A5F] uppercase tracking-wide">
+                                2. Status Tamat Belajar / Kelulusan SMK
+                            </h4>
                         </div>
-                        <div>
-                            <label class="mb-1 block font-bold text-slate-700"
-                                >Tanggal Kelulusan/STTB</label
-                            >
-                            <input
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <BaseInput
+                                v-model="form.tamat_nomor_sttb"
+                                label="Nomor Ijazah / STTB SMK"
+                                placeholder="Contoh: M-SMK/06-3/..."
+                            />
+                            <BaseInput
                                 v-model="form.tamat_tanggal_sttb"
                                 type="date"
-                                class="w-full rounded-lg border border-slate-300 px-3 py-2"
-                            />
-                        </div>
-                        <div>
-                            <label class="mb-1 block font-bold text-slate-700"
-                                >Keterangan Lain-Lain</label
-                            >
-                            <input
-                                v-model="form.keterangan_lain_lain"
-                                type="text"
-                                class="w-full rounded-lg border border-slate-300 px-3 py-2"
+                                label="Tanggal Kelulusan / STTB SMK"
                             />
                         </div>
                     </div>
-                </div>
 
-                <!-- Modal Actions -->
-                <div
-                    class="sticky bottom-0 flex items-center justify-end gap-3 border-t border-slate-200 bg-white pt-4"
-                >
-                    <button
-                        type="button"
-                        class="cursor-pointer rounded-lg border border-slate-300 px-4 py-2 font-bold text-slate-700 transition-colors hover:bg-slate-100"
-                        @click="closeModal"
-                    >
-                        Batal
-                    </button>
-                    <button
-                        type="submit"
-                        :disabled="form.processing"
-                        class="cursor-pointer rounded-lg bg-blue-600 px-5 py-2 font-bold text-white shadow-md transition-all hover:bg-blue-700 active:scale-95 disabled:opacity-50"
-                    >
-                        <span v-if="form.processing">Menyimpan...</span>
-                        <span v-else>{{
-                            isEditing ? 'Simpan Perubahan' : 'Tambahkan Siswa'
-                        }}</span>
-                    </button>
+                    <!-- Seksi 3: Meninggalkan Sekolah / Mutasi -->
+                    <div class="p-4 bg-[#F8FAFC] rounded-xl border border-[#E2E8F0] space-y-3">
+                        <div class="flex items-center gap-2 pb-2 border-b border-[#E2E8F0]">
+                            <Building2 class="w-4 h-4 text-[#2B7CC2]" />
+                            <h4 class="text-xs font-bold text-[#0F3A5F] uppercase tracking-wide">
+                                3. Meninggalkan Sekolah / Pindah (Jika Berlaku)
+                            </h4>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            <BaseInput
+                                v-model="form.keluar_tanggal"
+                                type="date"
+                                label="Tanggal Keluar / Pindah"
+                            />
+                            <div class="sm:col-span-2">
+                                <BaseInput
+                                    v-model="form.keluar_alasan"
+                                    label="Alasan Meninggalkan Sekolah / Pindah"
+                                    placeholder="Contoh: Mengikuti perpindahan tugas orang tua"
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Seksi 4: Keterangan Tambahan -->
+                    <BaseInput
+                        v-model="form.keterangan_lain_lain"
+                        label="Keterangan Tambahan Lain-lain"
+                        placeholder="Catatan tambahan mengenai siswa jika ada"
+                    />
                 </div>
             </form>
-        </div>
+
+            <template #footer>
+                <div class="flex items-center justify-end gap-2.5 w-full">
+                    <BaseButton variant="secondary" size="sm" @click="closeModal">
+                        Batal
+                    </BaseButton>
+                    <BaseButton
+                        variant="primary"
+                        size="sm"
+                        :loading="form.processing"
+                        form="siswaForm"
+                        type="submit"
+                    >
+                        {{ isEditing ? 'Simpan Perubahan' : 'Tambahkan Siswa' }}
+                    </BaseButton>
+                </div>
+            </template>
+        </BaseModal>
+
+        <!-- Modal Konfirmasi Hapus Siswa -->
+        <BaseConfirmModal
+            :open="isConfirmOpen"
+            :loading="isConfirmLoading"
+            :title="confirmOptions.title"
+            :message="confirmOptions.message"
+            :item-info="confirmOptions.itemInfo"
+            :sub-info="confirmOptions.subInfo"
+            :confirm-text="confirmOptions.confirmText"
+            :cancel-text="confirmOptions.cancelText"
+            :variant="confirmOptions.variant"
+            @close="closeConfirm"
+            @confirm="handleConfirm"
+        />
     </div>
 </template>

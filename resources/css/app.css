@@ -2,20 +2,32 @@
 
 @import 'tw-animate-css';
 
+@source '../views';
+@source '../js';
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
 
-@custom-variant dark (&:is(.dark *));
+@custom-variant dark (&:where(.dark, .dark *));
 
 @theme inline {
     --font-sans:
-        'Instrument Sans', ui-sans-serif, system-ui, sans-serif,
-        'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
-        'Noto Color Emoji';
+        'Instrument Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI',
+        Roboto, Helvetica, Arial, sans-serif;
 
-    --radius-lg: var(--radius);
-    --radius-md: calc(var(--radius) - 2px);
-    --radius-sm: calc(var(--radius) - 4px);
+    --radius-lg: 12px;
+    --radius-md: 10px;
+    --radius-sm: 8px;
+
+    /* SI KARANJI Brand Tokens */
+    --color-brand-primary: #2B7CC2;
+    --color-brand-hover: #226AA8;
+    --color-brand-active: #EAF4FC;
+    --color-brand-ring: #BFE3FA;
+    --color-brand-dark: #0F3A5F;
+    --color-brand-muted: #64748B;
+    --color-brand-bg: #F8FAFC;
+    --color-brand-border: #E2E8F0;
+    --color-brand-surface: #FFFFFF;
 
     --color-background: var(--background);
     --color-foreground: var(--foreground);
@@ -45,12 +57,6 @@
     --color-input: var(--input);
     --color-ring: var(--ring);
 
-    --color-chart-1: var(--chart-1);
-    --color-chart-2: var(--chart-2);
-    --color-chart-3: var(--chart-3);
-    --color-chart-4: var(--chart-4);
-    --color-chart-5: var(--chart-5);
-
     --color-sidebar: var(--sidebar);
     --color-sidebar-foreground: var(--sidebar-foreground);
     --color-sidebar-primary: var(--sidebar-primary);
@@ -62,74 +68,64 @@
 }
 
 :root {
-    --background: oklch(1 0 0);
-    --foreground: oklch(0.145 0 0);
-    --card: oklch(1 0 0);
-    --card-foreground: oklch(0.145 0 0);
-    --popover: oklch(1 0 0);
-    --popover-foreground: oklch(0.145 0 0);
-    --primary: oklch(0.205 0 0);
-    --primary-foreground: oklch(0.985 0 0);
-    --secondary: oklch(0.97 0 0);
-    --secondary-foreground: oklch(0.205 0 0);
-    --muted: oklch(0.97 0 0);
-    --muted-foreground: oklch(0.556 0 0);
-    --accent: oklch(0.97 0 0);
-    --accent-foreground: oklch(0.205 0 0);
-    --destructive: oklch(0.577 0.245 27.325);
-    --destructive-foreground: oklch(0.577 0.245 27.325);
-    --border: oklch(0.922 0 0);
-    --input: oklch(0.922 0 0);
-    --ring: oklch(0.87 0 0);
-    --chart-1: oklch(0.646 0.222 41.116);
-    --chart-2: oklch(0.6 0.118 184.704);
-    --chart-3: oklch(0.398 0.07 227.392);
-    --chart-4: oklch(0.828 0.189 84.429);
-    --chart-5: oklch(0.769 0.188 70.08);
-    --radius: 0.625rem;
-    --sidebar: oklch(0.985 0 0);
-    --sidebar-foreground: oklch(0.145 0 0);
-    --sidebar-primary: oklch(0.205 0 0);
-    --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.97 0 0);
-    --sidebar-accent-foreground: oklch(0.205 0 0);
-    --sidebar-border: oklch(0.922 0 0);
-    --sidebar-ring: oklch(0.87 0 0);
+    --background: #F8FAFC;
+    --foreground: #0F3A5F;
+    --card: #FFFFFF;
+    --card-foreground: #0F3A5F;
+    --popover: #FFFFFF;
+    --popover-foreground: #0F3A5F;
+    --primary: #2B7CC2;
+    --primary-foreground: #FFFFFF;
+    --secondary: #FFFFFF;
+    --secondary-foreground: #0F3A5F;
+    --muted: #F1F5F9;
+    --muted-foreground: #64748B;
+    --accent: #EAF4FC;
+    --accent-foreground: #2B7CC2;
+    --destructive: #DC2626;
+    --destructive-foreground: #FFFFFF;
+    --border: #E2E8F0;
+    --input: #E2E8F0;
+    --ring: #BFE3FA;
+    --radius: 10px;
+    --sidebar: #FFFFFF;
+    --sidebar-foreground: #0F3A5F;
+    --sidebar-primary: #2B7CC2;
+    --sidebar-primary-foreground: #FFFFFF;
+    --sidebar-accent: #EAF4FC;
+    --sidebar-accent-foreground: #2B7CC2;
+    --sidebar-border: #E2E8F0;
+    --sidebar-ring: #BFE3FA;
 }
 
 .dark {
-    --background: oklch(0.145 0 0);
-    --foreground: oklch(0.985 0 0);
-    --card: oklch(0.145 0 0);
-    --card-foreground: oklch(0.985 0 0);
-    --popover: oklch(0.145 0 0);
-    --popover-foreground: oklch(0.985 0 0);
-    --primary: oklch(0.985 0 0);
-    --primary-foreground: oklch(0.205 0 0);
-    --secondary: oklch(0.269 0 0);
-    --secondary-foreground: oklch(0.985 0 0);
-    --muted: oklch(0.269 0 0);
-    --muted-foreground: oklch(0.708 0 0);
-    --accent: oklch(0.269 0 0);
-    --accent-foreground: oklch(0.985 0 0);
-    --destructive: oklch(0.396 0.141 25.723);
-    --destructive-foreground: oklch(0.637 0.237 25.331);
-    --border: oklch(0.269 0 0);
-    --input: oklch(0.269 0 0);
-    --ring: oklch(0.439 0 0);
-    --chart-1: oklch(0.488 0.243 264.376);
-    --chart-2: oklch(0.696 0.17 162.48);
-    --chart-3: oklch(0.769 0.188 70.08);
-    --chart-4: oklch(0.627 0.265 303.9);
-    --chart-5: oklch(0.645 0.246 16.439);
-    --sidebar: oklch(0.205 0 0);
-    --sidebar-foreground: oklch(0.985 0 0);
-    --sidebar-primary: oklch(0.985 0 0);
-    --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.269 0 0);
-    --sidebar-accent-foreground: oklch(0.985 0 0);
-    --sidebar-border: oklch(0.269 0 0);
-    --sidebar-ring: oklch(0.439 0 0);
+    --background: #0B1120;
+    --foreground: #F1F5F9;
+    --card: #131F37;
+    --card-foreground: #F1F5F9;
+    --popover: #131F37;
+    --popover-foreground: #F1F5F9;
+    --primary: #38BDF8;
+    --primary-foreground: #0B1120;
+    --secondary: #1E293B;
+    --secondary-foreground: #F1F5F9;
+    --muted: #1E293B;
+    --muted-foreground: #94A3B8;
+    --accent: #1E3A5F;
+    --accent-foreground: #60A5FA;
+    --destructive: #EF4444;
+    --destructive-foreground: #FFFFFF;
+    --border: #223354;
+    --input: #223354;
+    --ring: #38BDF8;
+    --sidebar: #131F37;
+    --sidebar-foreground: #F1F5F9;
+    --sidebar-primary: #38BDF8;
+    --sidebar-primary-foreground: #0B1120;
+    --sidebar-accent: #1E3A5F;
+    --sidebar-accent-foreground: #60A5FA;
+    --sidebar-border: #223354;
+    --sidebar-ring: #38BDF8;
 }
 
 @layer base {
@@ -138,6 +134,91 @@
     }
 
     body {
-        @apply bg-background text-foreground;
+        @apply bg-background text-foreground transition-colors duration-150;
     }
 }
+
+@layer utilities {
+    .dark .bg-white {
+        background-color: #131F37;
+    }
+    .dark .bg-\[\#F8FAFC\] {
+        background-color: #0B1120;
+    }
+    .dark .bg-\[\#F1F5F9\] {
+        background-color: #0E1726;
+    }
+    .dark .bg-\[\#EAF4FC\] {
+        background-color: rgba(43, 124, 194, 0.18);
+    }
+    .dark .text-\[\#0F3A5F\] {
+        color: #F1F5F9;
+    }
+    .dark .text-\[\#64748B\] {
+        color: #94A3B8;
+    }
+    .dark .text-\[\#2B7CC2\] {
+        color: #38BDF8;
+    }
+    .dark .border-\[\#E2E8F0\] {
+        border-color: #223354;
+    }
+    .dark .border-\[\#BFE3FA\] {
+        border-color: rgba(56, 189, 248, 0.3);
+    }
+    .dark .border-\[\#0F3A5F\] {
+        border-color: #38BDF8;
+    }
+    .dark .bg-slate-50,
+    .dark .bg-slate-100 {
+        background-color: #0E1726;
+    }
+    .dark .border-slate-100,
+    .dark .border-slate-200,
+    .dark .border-slate-300,
+    .dark .border-slate-200\/90,
+    .dark .border-slate-100\/80 {
+        border-color: #223354;
+    }
+    .dark .divide-slate-100 > :not([hidden]) ~ :not([hidden]),
+    .dark .divide-slate-200 > :not([hidden]) ~ :not([hidden]),
+    .dark .divide-\[\#E2E8F0\] > :not([hidden]) ~ :not([hidden]) {
+        border-color: #223354;
+    }
+
+    /* Global Dark Hover Overrides (Mencegah Baris Tabel & Tombol Menjadi Putih Saat Kursor Melayang) */
+    .dark .hover\:bg-\[\#F8FAFC\]:hover {
+        background-color: #1A2846 !important;
+    }
+    .dark .hover\:bg-\[\#EAF4FC\]:hover {
+        background-color: rgba(43, 124, 194, 0.25) !important;
+    }
+    .dark .hover\:bg-\[\#BFE3FA\]\/50:hover {
+        background-color: rgba(56, 189, 248, 0.2) !important;
+    }
+    .dark .hover\:bg-slate-50:hover,
+    .dark .hover\:bg-slate-50\/80:hover {
+        background-color: #1A2846 !important;
+    }
+    .dark .hover\:bg-slate-100:hover,
+    .dark .hover\:bg-slate-200\/50:hover {
+        background-color: #223354 !important;
+    }
+    .dark .hover\:bg-rose-50:hover {
+        background-color: rgba(244, 63, 94, 0.2) !important;
+    }
+    .dark .hover\:text-\[\#0F3A5F\]:hover {
+        color: #F1F5F9 !important;
+    }
+    .dark .hover\:text-\[\#2B7CC2\]:hover {
+        color: #38BDF8 !important;
+    }
+}
+
+@media print {
+    html, html.dark, body, .dark body {
+        background-color: #FFFFFF !important;
+        color: #000000 !important;
+    }
+}
+

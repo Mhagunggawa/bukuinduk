@@ -1,15 +1,24 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, ref, onMounted, watch } from 'vue';
 import { Link, usePage } from '@inertiajs/vue3';
+import { onClickOutside } from '@vueuse/core';
 import AppSidebar from '@/components/AppSidebar.vue';
+import LogoutModal from '@/components/LogoutModal.vue';
+import AppToast from '@/components/base/AppToast.vue';
+import { useAppearance } from '@/composables/useAppearance';
+import { useToast } from '@/composables/useToast';
 import {
     Menu,
     ChevronRight,
+    ChevronDown,
     Calendar,
-    CheckCircle2,
-    AlertCircle,
+    User,
     Shield,
-    UserCheck,
+    LogOut,
+    PanelLeftClose,
+    PanelLeftOpen,
+    Sun,
+    Moon,
 } from '@lucide/vue';
 
 interface Breadcrumb {
@@ -23,17 +32,99 @@ const props = withDefaults(
     }>(),
     {
         breadcrumbs: () => [],
-    },
+    }
 );
 
 const page = usePage();
 const user = computed(() => (page.props.auth as any)?.user);
-const activeTahunPelajaran = computed(
-    () => (page.props as any).activeTahunPelajaran || '2025/2026',
+const userInitials = computed(() => {
+    const name = user.value?.name || 'User';
+    return name
+        .split(' ')
+        .map((n: string) => n[0])
+        .slice(0, 2)
+        .join('')
+        .toUpperCase();
+});
+
+const userRoleLabel = computed(() => {
+    if (!user.value) return 'Pengguna';
+    if (user.value.role === 'admin') return 'Administrator';
+    if (user.value.role === 'tata_usaha' || user.value.role === 'tata usaha') return 'Tata Usaha';
+    return user.value.role || 'Staf Sekolah';
+});
+
+const isAdmin = computed(() => ['admin', 'super admin'].includes(user.value?.role));
+
+const { appearance, resolvedAppearance, updateAppearance } = useAppearance();
+const isDark = computed(() => resolvedAppearance.value === 'dark');
+
+const toggleDarkMode = () => {
+    updateAppearance(isDark.value ? 'light' : 'dark');
+};
+
+const isUserMenuOpen = ref(false);
+const isLogoutModalOpen = ref(false);
+const userMenuRef = ref<HTMLElement | null>(null);
+
+onClickOutside(userMenuRef, () => {
+    isUserMenuOpen.value = false;
+});
+
+const openLogoutModal = () => {
+    isUserMenuOpen.value = false;
+    isLogoutModalOpen.value = true;
+};
+
+// Sistem Notifikasi Toast Bersih & Auto-Dismiss
+const { toastState, show: showToast, close: closeToast } = useToast();
+
+watch(
+    () => (page.props as any).flash,
+    (newFlash) => {
+        if (!newFlash) return;
+        if (newFlash.success) {
+            showToast({
+                type: 'success',
+                title: 'Berhasil',
+                message: newFlash.success,
+                duration: 4500,
+            });
+        } else if (newFlash.error) {
+            showToast({
+                type: 'error',
+                title: 'Pemberitahuan Sistem',
+                message: newFlash.error,
+                duration: 5500,
+            });
+        } else if (newFlash.warning) {
+            showToast({
+                type: 'warning',
+                title: 'Peringatan',
+                message: newFlash.warning,
+                duration: 5000,
+            });
+        } else if (newFlash.info) {
+            showToast({
+                type: 'info',
+                title: 'Informasi',
+                message: newFlash.info,
+                duration: 4500,
+            });
+        }
+    },
+    { deep: true, immediate: true }
 );
-const flash = computed(() => (page.props as any).flash || {});
 
 const isSidebarOpen = ref(false);
+const isSidebarCollapsed = ref(false);
+
+onMounted(() => {
+    const saved = localStorage.getItem('si-karanji-sidebar-collapsed');
+    if (saved !== null) {
+        isSidebarCollapsed.value = saved === 'true';
+    }
+});
 
 const toggleSidebar = () => {
     isSidebarOpen.value = !isSidebarOpen.value;
@@ -43,22 +134,25 @@ const closeSidebar = () => {
     isSidebarOpen.value = false;
 };
 
+const toggleCollapse = () => {
+    isSidebarCollapsed.value = !isSidebarCollapsed.value;
+    localStorage.setItem('si-karanji-sidebar-collapsed', String(isSidebarCollapsed.value));
+};
+
 const currentUrl = computed(() => page.url);
 
-// Resolusi otomatis section, page title, dan breadcrumbs jika tidak diberikan via props
 const resolvedRoute = computed(() => {
     const url = currentUrl.value;
 
     if (url === '/dashboard' || url === '/') {
+        const title = userRoleLabel.value ? `Dashboard ${userRoleLabel.value}` : 'Dashboard';
         return {
-            sectionTitle: 'Navigasi Utama',
-            pageTitle: 'Dashboard',
-            breadcrumbs: [{ title: 'Dashboard', href: '/dashboard' }],
+            pageTitle: title,
+            breadcrumbs: [{ title, href: '/dashboard' }],
         };
     }
     if (url.startsWith('/siswa') && url.includes('/buku-induk')) {
         return {
-            sectionTitle: 'Navigasi Utama',
             pageTitle: 'Buku Induk Siswa',
             breadcrumbs: [
                 { title: 'Direktori Siswa', href: '/siswa' },
@@ -68,47 +162,51 @@ const resolvedRoute = computed(() => {
     }
     if (url.startsWith('/siswa')) {
         return {
-            sectionTitle: 'Navigasi Utama',
             pageTitle: 'Direktori Siswa',
             breadcrumbs: [{ title: 'Direktori Siswa', href: '/siswa' }],
         };
     }
     if (url.startsWith('/import')) {
         return {
-            sectionTitle: 'Navigasi Utama',
             pageTitle: 'Import Data Massal',
             breadcrumbs: [{ title: 'Import Data Massal', href: '/import' }],
         };
     }
     if (url.startsWith('/master-data')) {
         return {
-            sectionTitle: 'Master & Pengguna',
             pageTitle: 'Data Master',
-            breadcrumbs: [
-                { title: 'Master & Pengguna' },
-                { title: 'Data Master', href: '/master-data' },
-            ],
+            breadcrumbs: [{ title: 'Data Master', href: '/master-data' }],
         };
     }
     if (url.startsWith('/users')) {
         return {
-            sectionTitle: 'Master & Pengguna',
             pageTitle: 'Manajemen Pengguna',
+            breadcrumbs: [{ title: 'Manajemen Pengguna', href: '/users' }],
+        };
+    }
+    if (url.startsWith('/settings/profile')) {
+        return {
+            pageTitle: 'Profil Pengguna',
             breadcrumbs: [
-                { title: 'Master & Pengguna' },
-                { title: 'Manajemen Pengguna', href: '/users' },
+                { title: 'Profil Pengguna', href: '/settings/profile' },
+            ],
+        };
+    }
+    if (url.startsWith('/settings/security')) {
+        return {
+            pageTitle: 'Keamanan & Sandi',
+            breadcrumbs: [
+                { title: 'Keamanan & Sandi', href: '/settings/security' },
             ],
         };
     }
 
     return {
-        sectionTitle: '',
         pageTitle: 'Halaman',
         breadcrumbs: [],
     };
 });
 
-// Breadcrumbs yang aktif: utamakan props.breadcrumbs jika diberikan, fallback ke resolvedRoute
 const activeBreadcrumbs = computed<Breadcrumb[]>(() => {
     if (props.breadcrumbs && props.breadcrumbs.length > 0) {
         return props.breadcrumbs;
@@ -116,155 +214,222 @@ const activeBreadcrumbs = computed<Breadcrumb[]>(() => {
     return resolvedRoute.value.breadcrumbs;
 });
 
-// Judul halaman aktif di Topbar
 const activePageTitle = computed(() => {
     if (activeBreadcrumbs.value.length > 0) {
-        return activeBreadcrumbs.value[activeBreadcrumbs.value.length - 1]
-            .title;
+        return activeBreadcrumbs.value[activeBreadcrumbs.value.length - 1].title;
     }
     return resolvedRoute.value.pageTitle;
 });
 </script>
 
 <template>
-    <div
-        class="flex min-h-screen flex-col bg-slate-50/70 font-sans text-slate-900 antialiased md:flex-row"
-    >
-        <!-- AppSidebar Component (Kumpulan Pintasan & Navigasi Sidebar) -->
-        <AppSidebar :open="isSidebarOpen" @close="closeSidebar" />
+    <div class="fixed inset-0 overflow-hidden bg-[#F8FAFC] font-sans text-[#0F3A5F] flex flex-col md:flex-row antialiased">
+        <!-- AppSidebar Component -->
+        <AppSidebar
+            :open="isSidebarOpen"
+            :collapsed="isSidebarCollapsed"
+            @close="closeSidebar"
+            @toggle-collapse="toggleCollapse"
+        />
 
         <!-- Right Main Viewport -->
-        <div class="flex min-w-0 flex-1 flex-col overflow-hidden">
-            <!-- Modern Topbar (bg-white/95 backdrop-blur-md border-b border-slate-200/80 min-h-16 py-2.5 px-4 sm:px-6 flex items-center justify-between shrink-0 sticky top-0 z-30 shadow-2xs print:hidden) -->
-            <header
-                class="sticky top-0 z-30 flex min-h-16 shrink-0 items-center justify-between border-b border-slate-200/80 bg-white/95 px-4 py-2 shadow-2xs backdrop-blur-md sm:px-6 print:hidden"
-            >
-                <div class="flex min-w-0 items-center gap-3.5">
+        <div class="flex-1 flex flex-col min-w-0 h-full overflow-hidden bg-[#F8FAFC]">
+            <!-- Topbar / Navbar (Terkunci di Posisi Atas, Tidak Pernah Bergulir) -->
+            <header class="h-16 bg-white border-b border-[#E2E8F0] px-4 sm:px-6 flex items-center justify-between shrink-0 z-30">
+                <div class="flex items-center gap-3.5 min-w-0">
+                    <!-- Tombol Buka Menu (Mobile) -->
                     <button
                         type="button"
-                        class="shrink-0 cursor-pointer rounded-lg p-2 text-slate-600 hover:bg-slate-100 hover:text-slate-900 md:hidden"
+                        class="md:hidden p-1.5 text-slate-500 hover:text-[#0F3A5F] rounded-[8px] hover:bg-slate-100 transition-colors cursor-pointer shrink-0"
                         title="Buka Menu"
+                        aria-label="Buka Menu"
                         @click="toggleSidebar"
                     >
-                        <Menu class="h-5 w-5" />
+                        <Menu class="w-5 h-5" />
                     </button>
 
-                    <!-- Page Title & Breadcrumbs Section -->
-                    <div class="flex min-w-0 flex-col justify-center">
-                        <!-- Breadcrumbs Trail -->
-                        <nav
-                            class="flex items-center text-[11px] font-semibold text-slate-400"
-                        >
-                            <Link
-                                href="/dashboard"
-                                class="flex items-center gap-1 text-slate-500 hover:text-blue-900 hover:underline"
-                            >
-                                <span>Beranda</span>
-                            </Link>
-                            <template
-                                v-for="(crumb, idx) in activeBreadcrumbs"
-                                :key="idx"
-                            >
-                                <ChevronRight
-                                    class="mx-1 h-3 w-3 shrink-0 text-slate-400"
-                                />
-                                <Link
-                                    v-if="
-                                        crumb.href &&
-                                        idx < activeBreadcrumbs.length - 1
-                                    "
-                                    :href="crumb.href"
-                                    class="max-w-[120px] truncate text-slate-500 hover:text-blue-900 hover:underline sm:max-w-none"
-                                >
-                                    {{ crumb.title }}
-                                </Link>
-                                <span
-                                    v-else
-                                    :class="
-                                        idx === activeBreadcrumbs.length - 1
-                                            ? 'max-w-[180px] truncate font-bold text-blue-900 sm:max-w-none'
-                                            : 'max-w-[120px] truncate text-slate-500 sm:max-w-none'
-                                    "
-                                >
-                                    {{ crumb.title }}
-                                </span>
-                            </template>
-                        </nav>
+                    <!-- Tombol Ciutkan / Perluas Sidebar (Desktop) -->
+                    <button
+                        type="button"
+                        class="hidden md:flex p-1.5 text-[#64748B] hover:text-[#0F3A5F] hover:bg-slate-100 rounded-[8px] transition-colors cursor-pointer shrink-0"
+                        :title="isSidebarCollapsed ? 'Perluas Sidebar' : 'Ciutkan Sidebar'"
+                        :aria-label="isSidebarCollapsed ? 'Perluas Sidebar' : 'Ciutkan Sidebar'"
+                        @click="toggleCollapse"
+                    >
+                        <PanelLeftOpen v-if="isSidebarCollapsed" class="w-5 h-5" />
+                        <PanelLeftClose v-else class="w-5 h-5" />
+                    </button>
 
-                        <!-- Prominent Active Page Title Header -->
-                        <div class="mt-0.5 flex items-center gap-2">
-                            <h2
-                                class="truncate text-sm leading-tight font-extrabold tracking-tight text-blue-950 sm:text-base"
+                    <!-- Pemisah Vertikal Halus (Desktop) -->
+                    <div class="hidden md:block w-px h-5 bg-[#E2E8F0] shrink-0" />
+
+                    <!-- Single-line Clean Header Breadcrumbs: "SI KARANJI > Dashboard Administrator" -->
+                    <nav class="flex items-center min-w-0 text-sm sm:text-[15px]">
+                        <Link
+                            href="/dashboard"
+                            class="text-slate-400 hover:text-[#2B7CC2] transition-colors shrink-0 font-medium tracking-tight"
+                        >
+                            SI KARANJI
+                        </Link>
+
+                        <template v-for="(crumb, idx) in activeBreadcrumbs" :key="idx">
+                            <ChevronRight class="w-4 h-4 mx-1.5 sm:mx-2 text-slate-400 shrink-0" />
+                            <Link
+                                v-if="crumb.href && idx < activeBreadcrumbs.length - 1"
+                                :href="crumb.href"
+                                class="text-slate-400 hover:text-[#2B7CC2] transition-colors truncate max-w-[120px] sm:max-w-none font-medium tracking-tight"
                             >
-                                {{ activePageTitle }}
-                            </h2>
+                                {{ crumb.title }}
+                            </Link>
                             <span
-                                v-if="resolvedRoute.sectionTitle"
-                                class="hidden items-center rounded-md border border-slate-200 bg-slate-100 px-2 py-0.5 text-[10px] font-bold tracking-wider text-slate-500 uppercase lg:inline-flex"
+                                v-else
+                                class="text-[#0F3A5F] font-bold tracking-tight truncate"
                             >
-                                {{ resolvedRoute.sectionTitle }}
+                                {{ crumb.title }}
                             </span>
-                        </div>
-                    </div>
+                        </template>
+                    </nav>
                 </div>
 
-                <!-- Right Topbar Controls -->
-                <div class="flex shrink-0 items-center gap-2 sm:gap-3">
-                    <!-- Active TP Chip -->
-                    <div
-                        class="hidden items-center gap-1.5 rounded-full border border-blue-200/80 bg-blue-50/80 px-3 py-1 text-xs font-bold text-blue-900 shadow-2xs sm:flex"
+                <!-- Right Topbar Controls (Termasuk Profil Pengguna, Dark Mode & Logout) -->
+                <div class="flex items-center gap-2 sm:gap-3 shrink-0">
+                    <!-- Tombol Dark Mode / Light Mode Toggle (Header Kanan Atas) -->
+                    <button
+                        type="button"
+                        class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-white dark:bg-[#1E293B] border border-[#E2E8F0] dark:border-[#223354] text-[#64748B] dark:text-[#F1F5F9] hover:text-[#0F3A5F] dark:hover:text-[#38BDF8] hover:bg-[#F8FAFC] dark:hover:bg-[#283548] flex items-center justify-center transition-all cursor-pointer shadow-2xs group"
+                        :title="isDark ? 'Ganti ke Mode Terang (Light Mode)' : 'Ganti ke Mode Gelap (Dark Mode)'"
+                        :aria-label="isDark ? 'Ganti ke Mode Terang' : 'Ganti ke Mode Gelap'"
+                        @click="toggleDarkMode"
                     >
-                        <Calendar class="h-3.5 w-3.5 text-blue-600" />
-                        <span>T.P. {{ activeTahunPelajaran }}</span>
-                    </div>
+                        <Sun v-if="isDark" class="w-4 h-4 text-amber-400 group-hover:rotate-45 transition-transform" />
+                        <Moon v-else class="w-4 h-4 text-[#0F3A5F] group-hover:-rotate-12 transition-transform" />
+                    </button>
 
-                    <!-- Role Badge Chip -->
-                    <span
-                        v-if="user?.role === 'admin'"
-                        class="inline-flex items-center gap-1 rounded-full border border-emerald-300 bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-800 shadow-2xs"
-                    >
-                        <Shield class="h-3 w-3 text-emerald-600" />
-                        Admin
-                    </span>
-                    <span
-                        v-else
-                        class="inline-flex items-center gap-1 rounded-full border border-blue-300 bg-blue-50 px-2.5 py-1 text-xs font-bold text-blue-800 shadow-2xs"
-                    >
-                        <UserCheck class="h-3 w-3 text-blue-600" />
-                        Tata Usaha
-                    </span>
+                    <!-- Garis Pembatas Vertikal Antara Tombol Dark Mode dan Profil Pengguna -->
+                    <div class="h-6 w-px bg-[#E2E8F0] dark:bg-[#223354] mx-0.5 sm:mx-1 shrink-0" aria-hidden="true" />
+
+                    <!-- User Profile & Dropdown Menu (Gaya Warna Selaras SI KARANJI) -->
+                    <div ref="userMenuRef" class="relative">
+                        <button
+                            type="button"
+                            class="flex items-center gap-2.5 sm:gap-3 p-1 sm:p-1.5 rounded-xl hover:bg-[#EAF4FC]/60 dark:hover:bg-[#1E293B]/70 transition-all cursor-pointer group text-left select-none outline-none border border-transparent hover:border-[#BFE3FA]/70 dark:hover:border-[#223354]"
+                            :title="user?.name || 'User'"
+                            @click="isUserMenuOpen = !isUserMenuOpen"
+                        >
+                            <!-- Avatar Gradien Biru-Navy Selaras SI KARANJI -->
+                            <div
+                                class="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-[#2B7CC2] via-[#246FB1] to-[#0F3A5F] text-white font-bold text-xs sm:text-sm flex items-center justify-center shrink-0 shadow-sm ring-2 ring-[#BFE3FA]/60 dark:ring-[#38BDF8]/30 tracking-tight select-none"
+                            >
+                                {{ userInitials }}
+                            </div>
+
+                            <!-- Nama Huruf Kapital Tebal & Subtitle / Role -->
+                            <div class="hidden sm:flex flex-col text-left min-w-0 select-none">
+                                <span class="text-xs sm:text-[13px] font-bold text-[#0F3A5F] dark:text-[#F1F5F9] uppercase tracking-tight truncate leading-tight max-w-[140px] md:max-w-[220px]">
+                                    {{ user?.name || 'Administrator Utama' }}
+                                </span>
+                                <span class="text-[11px] sm:text-xs text-[#64748B] dark:text-[#94A3B8] font-medium leading-tight mt-0.5 truncate max-w-[140px] md:max-w-[220px]">
+                                    {{ userRoleLabel }}
+                                </span>
+                            </div>
+
+                            <!-- Icon Panah Bawah / Chevron Down -->
+                            <ChevronDown
+                                class="w-4 h-4 text-[#64748B] dark:text-[#94A3B8] group-hover:text-[#2B7CC2] dark:group-hover:text-[#38BDF8] transition-transform duration-200 shrink-0"
+                                :class="{ 'rotate-180 text-[#2B7CC2] dark:text-[#38BDF8]': isUserMenuOpen }"
+                            />
+                        </button>
+
+                        <!-- Menu Dropdown -->
+                        <Transition
+                            enter-active-class="transition duration-150 ease-out"
+                            enter-from-class="transform scale-95 opacity-0 -translate-y-1"
+                            enter-to-class="transform scale-100 opacity-100 translate-y-0"
+                            leave-active-class="transition duration-100 ease-in"
+                            leave-from-class="transform scale-100 opacity-100 translate-y-0"
+                            leave-close-class="transform scale-95 opacity-0 -translate-y-1"
+                        >
+                            <div
+                                v-if="isUserMenuOpen"
+                                class="absolute right-0 top-full mt-2 w-64 bg-white dark:bg-[#131F37] rounded-xl shadow-lg border border-[#E2E8F0] dark:border-[#223354] z-50 origin-top-right select-none overflow-hidden"
+                            >
+                                <!-- Header Info Pengguna: Bersih & Minimalis -->
+                                <div class="px-4 py-3 border-b border-[#E2E8F0] dark:border-[#223354]">
+                                    <div class="flex items-center justify-between gap-2">
+                                        <p class="text-xs font-bold text-[#0F3A5F] dark:text-[#F1F5F9] uppercase tracking-tight truncate">
+                                            {{ user?.name || 'Administrator Utama' }}
+                                        </p>
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#EAF4FC] dark:bg-[#1E3A5F]/50 text-[#2B7CC2] dark:text-[#38BDF8] border border-[#BFE3FA]/80 dark:border-[#2B7CC2]/40 shrink-0">
+                                            {{ userRoleLabel }}
+                                        </span>
+                                    </div>
+                                    <p class="text-[11px] text-[#64748B] dark:text-[#94A3B8] truncate mt-0.5">
+                                        {{ user?.email || 'admin@smk1gorontalo.sch.id' }}
+                                    </p>
+                                </div>
+
+                                <!-- Menu Tautan Akun -->
+                                <div class="p-1.5 space-y-0.5">
+                                    <Link
+                                        href="/settings/profile"
+                                        class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium text-[#0F3A5F] dark:text-[#E2E8F0] hover:text-[#2B7CC2] dark:hover:text-[#38BDF8] hover:bg-[#EAF4FC] dark:hover:bg-[#1E293B] transition-colors cursor-pointer group"
+                                        @click="isUserMenuOpen = false"
+                                    >
+                                        <User class="w-4 h-4 text-[#64748B] dark:text-[#94A3B8] group-hover:text-[#2B7CC2] dark:group-hover:text-[#38BDF8] transition-colors shrink-0" />
+                                        <span>Profil Pengguna</span>
+                                    </Link>
+
+                                    <!-- Menu Keamanan & Sandi (Hanya tampil untuk non-admin, admin mengelola lewat modul Manajemen Pengguna) -->
+                                    <Link
+                                        v-if="!isAdmin"
+                                        href="/settings/security"
+                                        class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium text-[#0F3A5F] dark:text-[#E2E8F0] hover:text-[#2B7CC2] dark:hover:text-[#38BDF8] hover:bg-[#EAF4FC] dark:hover:bg-[#1E293B] transition-colors cursor-pointer group"
+                                        @click="isUserMenuOpen = false"
+                                    >
+                                        <Shield class="w-4 h-4 text-[#64748B] dark:text-[#94A3B8] group-hover:text-[#2B7CC2] dark:group-hover:text-[#38BDF8] transition-colors shrink-0" />
+                                        <span>Keamanan & Sandi</span>
+                                    </Link>
+                                </div>
+
+                                <div class="h-px bg-[#E2E8F0] dark:bg-[#223354] my-0.5 mx-2" />
+
+                                <!-- Tombol Keluar dari Aplikasi -->
+                                <div class="p-1.5">
+                                    <button
+                                        type="button"
+                                        class="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer group text-left"
+                                        @click="openLogoutModal"
+                                    >
+                                        <LogOut class="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0" />
+                                        <span>Keluar dari Aplikasi</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </Transition>
+                    </div>
                 </div>
             </header>
 
-            <!-- Notification Flash Banners -->
-            <div
-                v-if="flash?.success || flash?.error"
-                class="p-4 pt-4 pb-0 sm:px-6 print:hidden"
-            >
-                <div
-                    v-if="flash?.success"
-                    class="flex items-start gap-2.5 rounded-xl border border-emerald-300 bg-emerald-50/90 p-3.5 text-xs font-semibold text-emerald-950 shadow-xs backdrop-blur-xs"
-                >
-                    <CheckCircle2
-                        class="mt-0.5 h-4 w-4 shrink-0 text-emerald-600"
-                    />
-                    <div class="flex-1">{{ flash.success }}</div>
-                </div>
-                <div
-                    v-if="flash?.error"
-                    class="mt-2 flex items-start gap-2.5 rounded-xl border border-rose-300 bg-rose-50/90 p-3.5 text-xs font-semibold text-rose-950 shadow-xs backdrop-blur-xs"
-                >
-                    <AlertCircle
-                        class="mt-0.5 h-4 w-4 shrink-0 text-rose-600"
-                    />
-                    <div class="flex-1">{{ flash.error }}</div>
-                </div>
-            </div>
-
-            <!-- Page Main Body -->
-            <main class="flex-1 overflow-y-auto p-4 sm:p-6">
+            <!-- Page Main Body (Satu-satunya area yang bergulir saat modul panjang) -->
+            <main class="flex-1 min-h-0 p-4 sm:p-6 overflow-y-auto">
                 <slot />
             </main>
         </div>
+
+        <!-- Floating Toast Notification (Bersih, Elegan, Auto-Dismiss Beberapa Detik) -->
+        <AppToast
+            :open="toastState.open"
+            :type="toastState.type"
+            :title="toastState.title"
+            :message="toastState.message"
+            :duration="toastState.duration"
+            @close="closeToast"
+        />
+
+        <!-- Modal Konfirmasi Logout -->
+        <LogoutModal
+            :open="isLogoutModalOpen"
+            @close="isLogoutModalOpen = false"
+        />
     </div>
 </template>

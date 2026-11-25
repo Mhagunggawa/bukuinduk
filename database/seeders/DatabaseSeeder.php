@@ -82,18 +82,18 @@ class DatabaseSeeder extends Seeder
             ]
         );
 
-        // 3. Master Tahun Pelajaran
+        // 3. Master Tahun Pelajaran (Tanpa konsep Tahun Aktif, setiap T.P. menyimpan data nilainya masing-masing)
         $tpList = [
-            ['tahun_pelajaran' => '2023/2024', 'is_aktif' => false],
-            ['tahun_pelajaran' => '2024/2025', 'is_aktif' => false],
-            ['tahun_pelajaran' => '2025/2026', 'is_aktif' => true],
-            ['tahun_pelajaran' => '2026/2027', 'is_aktif' => false],
+            '2023/2024',
+            '2024/2025',
+            '2025/2026',
+            '2026/2027',
+            '2027/2028',
         ];
         $tpModels = [];
-        foreach ($tpList as $tp) {
-            $tpModels[$tp['tahun_pelajaran']] = MasterTahunPelajaran::firstOrCreate(
-                ['tahun_pelajaran' => $tp['tahun_pelajaran']],
-                ['is_aktif' => $tp['is_aktif']]
+        foreach ($tpList as $tpName) {
+            $tpModels[$tpName] = MasterTahunPelajaran::firstOrCreate(
+                ['tahun_pelajaran' => $tpName]
             );
         }
 
@@ -263,9 +263,9 @@ class DatabaseSeeder extends Seeder
             }
         }
 
-        // 7. Seed Sample Grades for First Siswa (Semester 1 & 2)
+        // 7. Seed Sample Grades for First Siswa (Semester 1 & 2 di Tahun Pelajaran 2024/2025)
         if ($firstSiswa) {
-            $tpAktif = $tpModels['2025/2026'] ?? null;
+            $tp2425 = $tpModels['2024/2025'] ?? null;
             // Semester 1
             $sem1Scores = [
                 'PAI' => 88.0,
@@ -292,11 +292,11 @@ class DatabaseSeeder extends Seeder
                     NilaiAkademik::updateOrCreate(
                         [
                             'siswa_id' => $firstSiswa->id,
+                            'tahun_pelajaran_id' => $tp2425->id,
                             'mata_pelajaran_id' => $mapelModels[$k]->id,
                             'semester_ke' => 1,
                         ],
                         [
-                            'tahun_pelajaran_id' => $tpAktif?->id,
                             'nilai_angka' => $score,
                             'keterangan' => 'Tuntas',
                         ]
@@ -308,19 +308,18 @@ class DatabaseSeeder extends Seeder
 
             // Ekskul Sem 1
             NilaiEkstrakurikuler::updateOrCreate(
-                ['siswa_id' => $firstSiswa->id, 'ekstrakurikuler_id' => $ekskulModels['EKSKUL_PRAMUKA']->id, 'semester_ke' => 1],
+                ['siswa_id' => $firstSiswa->id, 'tahun_pelajaran_id' => $tp2425->id, 'ekstrakurikuler_id' => $ekskulModels['EKSKUL_PRAMUKA']->id, 'semester_ke' => 1],
                 ['nilai_predikat' => 'A', 'keterangan' => 'Sangat Aktif']
             );
             NilaiEkstrakurikuler::updateOrCreate(
-                ['siswa_id' => $firstSiswa->id, 'ekstrakurikuler_id' => $ekskulModels['EKSKUL_OLAHRAGA']->id, 'semester_ke' => 1],
+                ['siswa_id' => $firstSiswa->id, 'tahun_pelajaran_id' => $tp2425->id, 'ekstrakurikuler_id' => $ekskulModels['EKSKUL_OLAHRAGA']->id, 'semester_ke' => 1],
                 ['nilai_predikat' => 'B', 'keterangan' => 'Baik']
             );
 
             // Rekap Sem 1
             RekapSemesterSiswa::updateOrCreate(
-                ['siswa_id' => $firstSiswa->id, 'semester_ke' => 1],
+                ['siswa_id' => $firstSiswa->id, 'tahun_pelajaran_id' => $tp2425->id, 'semester_ke' => 1],
                 [
-                    'tahun_pelajaran_id' => $tpAktif?->id,
                     'nilai_pkl' => null,
                     'keterangan_pkl' => null,
                     'jumlah_nilai' => $total1,
@@ -359,11 +358,11 @@ class DatabaseSeeder extends Seeder
                     NilaiAkademik::updateOrCreate(
                         [
                             'siswa_id' => $firstSiswa->id,
+                            'tahun_pelajaran_id' => $tp2425->id,
                             'mata_pelajaran_id' => $mapelModels[$k]->id,
                             'semester_ke' => 2,
                         ],
                         [
-                            'tahun_pelajaran_id' => $tpAktif?->id,
                             'nilai_angka' => $score,
                             'keterangan' => 'Tuntas',
                         ]
@@ -374,14 +373,13 @@ class DatabaseSeeder extends Seeder
             }
 
             NilaiEkstrakurikuler::updateOrCreate(
-                ['siswa_id' => $firstSiswa->id, 'ekstrakurikuler_id' => $ekskulModels['EKSKUL_PRAMUKA']->id, 'semester_ke' => 2],
+                ['siswa_id' => $firstSiswa->id, 'tahun_pelajaran_id' => $tp2425->id, 'ekstrakurikuler_id' => $ekskulModels['EKSKUL_PRAMUKA']->id, 'semester_ke' => 2],
                 ['nilai_predikat' => 'A', 'keterangan' => 'Sangat Aktif']
             );
 
             RekapSemesterSiswa::updateOrCreate(
-                ['siswa_id' => $firstSiswa->id, 'semester_ke' => 2],
+                ['siswa_id' => $firstSiswa->id, 'tahun_pelajaran_id' => $tp2425->id, 'semester_ke' => 2],
                 [
-                    'tahun_pelajaran_id' => $tpAktif?->id,
                     'nilai_pkl' => null,
                     'keterangan_pkl' => null,
                     'jumlah_nilai' => $total2,
@@ -395,6 +393,69 @@ class DatabaseSeeder extends Seeder
                     'tingkat_tujuan' => 'XI TKJ',
                 ]
             );
+
+            // Seed Semester 3 di Tahun Pelajaran Berbeda (2025/2026) untuk menunjukkan perbedaan nilai antar Tahun Pelajaran
+            $tp2526 = $tpModels['2025/2026'] ?? null;
+            if ($tp2526) {
+                $sem3Scores = [
+                    'PAI' => 92.0,
+                    'PPKN' => 89.0,
+                    'BINDO' => 90.0,
+                    'PJOK' => 92.0,
+                    'SEJARAH' => 88.0,
+                    'SENI' => 87.0,
+                    'MULOK' => 90.0,
+                    'MTK' => 89.0,
+                    'BING' => 93.0,
+                    'INFORMATIKA' => 96.0,
+                    'IPAS' => 91.0,
+                    'DASAR_KEJURUAN' => 94.0,
+                    'KONSENTRASI_KEAHLIAN' => 95.0,
+                    'PKK' => 92.0,
+                    'MAPEL_PILIHAN' => 91.0,
+                ];
+                $total3 = 0;
+                $count3 = 0;
+                foreach ($sem3Scores as $k => $score) {
+                    if (isset($mapelModels[$k])) {
+                        NilaiAkademik::updateOrCreate(
+                            [
+                                'siswa_id' => $firstSiswa->id,
+                                'tahun_pelajaran_id' => $tp2526->id,
+                                'mata_pelajaran_id' => $mapelModels[$k]->id,
+                                'semester_ke' => 3,
+                            ],
+                            [
+                                'nilai_angka' => $score,
+                                'keterangan' => 'Tuntas',
+                            ]
+                        );
+                        $total3 += $score;
+                        $count3++;
+                    }
+                }
+
+                NilaiEkstrakurikuler::updateOrCreate(
+                    ['siswa_id' => $firstSiswa->id, 'tahun_pelajaran_id' => $tp2526->id, 'ekstrakurikuler_id' => $ekskulModels['EKSKUL_PRAMUKA']->id, 'semester_ke' => 3],
+                    ['nilai_predikat' => 'A', 'keterangan' => 'Sangat Baik']
+                );
+
+                RekapSemesterSiswa::updateOrCreate(
+                    ['siswa_id' => $firstSiswa->id, 'tahun_pelajaran_id' => $tp2526->id, 'semester_ke' => 3],
+                    [
+                        'nilai_pkl' => '94',
+                        'keterangan_pkl' => 'PT Telkom Indonesia',
+                        'jumlah_nilai' => $total3,
+                        'nilai_rata_rata' => round($total3 / max(1, $count3), 2),
+                        'ranking' => 1,
+                        'sakit_hari' => 0,
+                        'izin_hari' => 1,
+                        'tanpa_kabar_hari' => 0,
+                        'jumlah_absen_hari' => 1,
+                        'status_kenaikan' => null,
+                    ]
+                );
+            }
         }
     }
 }

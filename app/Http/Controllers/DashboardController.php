@@ -36,8 +36,6 @@ class DashboardController extends Controller
             ->take(6)
             ->get();
 
-        $activeTahun = MasterTahunPelajaran::where('is_aktif', true)->first();
-
         return Inertia::render('Dashboard', [
             'stats' => [
                 'totalAktif' => $totalAktif,
@@ -47,7 +45,6 @@ class DashboardController extends Controller
             ],
             'jurusans' => $jurusans,
             'recentSiswa' => $recentSiswa,
-            'activeTahun' => $activeTahun,
         ]);
     }
 }

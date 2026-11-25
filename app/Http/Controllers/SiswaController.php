@@ -167,6 +167,7 @@ class SiswaController extends Controller
             'nilaiAkademik.mataPelajaran',
             'nilaiAkademik.tahunPelajaran',
             'nilaiEkstrakurikuler.ekstrakurikuler',
+            'nilaiEkstrakurikuler.tahunPelajaran',
             'rekapSemester.tahunPelajaran',
         ]);
 
@@ -179,7 +180,7 @@ class SiswaController extends Controller
             ->get();
 
         $ekskulList = MasterEkstrakurikuler::orderBy('no_urut')->get();
-        $tahunList = MasterTahunPelajaran::orderBy('tahun_pelajaran')->get();
+        $tahunList = MasterTahunPelajaran::orderBy('tahun_pelajaran', 'asc')->get();
         $jurusanList = MasterKonsentrasiKeahlian::orderBy('nama_konsentrasi')->get();
 
         return Inertia::render('Siswa/ShowBukuInduk', [
@@ -196,7 +197,7 @@ class SiswaController extends Controller
     {
         $validated = $request->validate([
             'semester_ke' => ['required', 'integer', 'between:1,10'],
-            'tahun_pelajaran_id' => ['nullable', 'exists:master_tahun_pelajaran,id'],
+            'tahun_pelajaran_id' => ['required', 'exists:master_tahun_pelajaran,id'],
             'nilai_akademik' => ['array'],
             'nilai_akademik.*.mata_pelajaran_id' => ['required', 'exists:master_mata_pelajaran,id'],
             'nilai_akademik.*.nilai_angka' => ['nullable', 'numeric', 'between:0,100'],
@@ -215,8 +216,9 @@ class SiswaController extends Controller
             'tingkat_tujuan' => ['nullable', 'string', 'max:50'],
         ]);
 
-        $semesterKe = $validated['semester_ke'];
-        $tahunId = $validated['tahun_pelajaran_id'] ?? null;
+        $semesterKe = (int) $validated['semester_ke'];
+        $tahunId = (int) $validated['tahun_pelajaran_id'];
+        $tahunObj = MasterTahunPelajaran::find($tahunId);
 
         DB::transaction(function () use ($siswa, $semesterKe, $tahunId, $validated) {
             $totalNilai = 0;
@@ -229,11 +231,11 @@ class SiswaController extends Controller
                     NilaiAkademik::updateOrCreate(
                         [
                             'siswa_id' => $siswa->id,
+                            'tahun_pelajaran_id' => $tahunId,
                             'mata_pelajaran_id' => $item['mata_pelajaran_id'],
                             'semester_ke' => $semesterKe,
                         ],
                         [
-                            'tahun_pelajaran_id' => $tahunId,
                             'nilai_angka' => $nilai,
                             'keterangan' => $item['keterangan'] ?? null,
                         ]
@@ -251,6 +253,7 @@ class SiswaController extends Controller
                     NilaiEkstrakurikuler::updateOrCreate(
                         [
                             'siswa_id' => $siswa->id,
+                            'tahun_pelajaran_id' => $tahunId,
                             'ekstrakurikuler_id' => $item['ekstrakurikuler_id'],
                             'semester_ke' => $semesterKe,
                         ],
@@ -271,10 +274,10 @@ class SiswaController extends Controller
             RekapSemesterSiswa::updateOrCreate(
                 [
                     'siswa_id' => $siswa->id,
+                    'tahun_pelajaran_id' => $tahunId,
                     'semester_ke' => $semesterKe,
                 ],
                 [
-                    'tahun_pelajaran_id' => $tahunId,
                     'nilai_pkl' => $validated['nilai_pkl'] ?? null,
                     'keterangan_pkl' => $validated['keterangan_pkl'] ?? null,
                     'jumlah_nilai' => $countNilai > 0 ? $totalNilai : null,
@@ -290,6 +293,8 @@ class SiswaController extends Controller
             );
         });
 
-        return redirect()->back()->with('success', "Nilai Semester {$semesterKe} berhasil disimpan.");
+        $tpLabel = $tahunObj ? " (T.P. {$tahunObj->tahun_pelajaran})" : '';
+
+        return redirect()->back()->with('success', "Nilai Semester {$semesterKe}{$tpLabel} berhasil disimpan.");
     }
 }

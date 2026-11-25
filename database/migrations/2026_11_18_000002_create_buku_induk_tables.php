@@ -41,7 +41,6 @@ return new class extends Migration
         Schema::create('master_tahun_pelajaran', function (Blueprint $table) {
             $table->id();
             $table->string('tahun_pelajaran', 20)->unique();
-            $table->boolean('is_aktif')->default(false);
             $table->timestamps();
         });
 
@@ -108,38 +107,39 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        // 8. Tabel Nilai Akademik per Semester (Semester I - X)
+        // 8. Tabel Nilai Akademik per Tahun Pelajaran & Semester (Semester I - X)
         Schema::create('nilai_akademik', function (Blueprint $table) {
             $table->id();
             $table->foreignId('siswa_id')->constrained('siswa')->cascadeOnDelete();
             $table->foreignId('mata_pelajaran_id')->constrained('master_mata_pelajaran')->cascadeOnDelete();
-            $table->foreignId('tahun_pelajaran_id')->nullable()->constrained('master_tahun_pelajaran')->nullOnDelete();
+            $table->foreignId('tahun_pelajaran_id')->constrained('master_tahun_pelajaran')->cascadeOnDelete();
             $table->unsignedTinyInteger('semester_ke'); // 1 sampai 10
             $table->decimal('nilai_angka', 5, 2)->nullable();
             $table->string('keterangan')->nullable();
             $table->timestamps();
 
-            $table->unique(['siswa_id', 'mata_pelajaran_id', 'semester_ke'], 'unik_nilai_siswa_semester');
+            $table->unique(['siswa_id', 'tahun_pelajaran_id', 'mata_pelajaran_id', 'semester_ke'], 'unik_nilai_siswa_tp_semester');
         });
 
-        // 9. Tabel Nilai Ekstrakurikuler per Semester
+        // 9. Tabel Nilai Ekstrakurikuler per Tahun Pelajaran & Semester
         Schema::create('nilai_ekstrakurikuler', function (Blueprint $table) {
             $table->id();
             $table->foreignId('siswa_id')->constrained('siswa')->cascadeOnDelete();
             $table->foreignId('ekstrakurikuler_id')->constrained('master_ekstrakurikuler')->cascadeOnDelete();
+            $table->foreignId('tahun_pelajaran_id')->constrained('master_tahun_pelajaran')->cascadeOnDelete();
             $table->unsignedTinyInteger('semester_ke'); // 1 sampai 10
             $table->string('nilai_predikat', 50)->nullable();
             $table->string('keterangan')->nullable();
             $table->timestamps();
 
-            $table->unique(['siswa_id', 'ekstrakurikuler_id', 'semester_ke'], 'unik_ekskul_siswa_semester');
+            $table->unique(['siswa_id', 'tahun_pelajaran_id', 'ekstrakurikuler_id', 'semester_ke'], 'unik_ekskul_siswa_tp_semester');
         });
 
-        // 10. Tabel Rekapitulasi Semester
+        // 10. Tabel Rekapitulasi per Tahun Pelajaran & Semester
         Schema::create('rekap_semester_siswa', function (Blueprint $table) {
             $table->id();
             $table->foreignId('siswa_id')->constrained('siswa')->cascadeOnDelete();
-            $table->foreignId('tahun_pelajaran_id')->nullable()->constrained('master_tahun_pelajaran')->nullOnDelete();
+            $table->foreignId('tahun_pelajaran_id')->constrained('master_tahun_pelajaran')->cascadeOnDelete();
             $table->unsignedTinyInteger('semester_ke'); // 1 sampai 10
             
             // Praktik Kerja Lapangan (PKL)
@@ -162,7 +162,7 @@ return new class extends Migration
             $table->string('tingkat_tujuan', 50)->nullable();
             $table->timestamps();
 
-            $table->unique(['siswa_id', 'semester_ke'], 'unik_rekap_siswa_semester');
+            $table->unique(['siswa_id', 'tahun_pelajaran_id', 'semester_ke'], 'unik_rekap_siswa_tp_semester');
         });
     }
 

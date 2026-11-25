@@ -21,20 +21,6 @@ class AdminUserSeeder extends Seeder
                 'role' => 'admin',
                 'email_verified_at' => now(),
             ],
-            [
-                'name' => 'Admin Kurikulum & TI',
-                'email' => 'admin.kurikulum@smk.sch.id',
-                'password' => Hash::make('password'),
-                'role' => 'admin',
-                'email_verified_at' => now(),
-            ],
-            [
-                'name' => 'Staf Tata Usaha',
-                'email' => 'tu@smk.sch.id',
-                'password' => Hash::make('password'),
-                'role' => 'tata_usaha',
-                'email_verified_at' => now(),
-            ],
         ];
 
         foreach ($admins as $adminData) {

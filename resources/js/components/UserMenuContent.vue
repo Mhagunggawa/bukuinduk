@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { Link, router } from '@inertiajs/vue3';
+import { ref } from 'vue';
+import { Link } from '@inertiajs/vue3';
 import { LogOut, Settings } from '@lucide/vue';
 import {
     DropdownMenuGroup,
@@ -8,17 +9,15 @@ import {
     DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 import UserInfo from '@/components/UserInfo.vue';
-import { logout } from '@/routes';
 import { edit } from '@/routes/profile';
 import type { User } from '@/types';
+import LogoutModal from '@/components/LogoutModal.vue';
 
 type Props = {
     user: User;
 };
 
-const handleLogout = () => {
-    router.flushAll();
-};
+const isLogoutOpen = ref(false);
 
 defineProps<Props>();
 </script>
@@ -40,15 +39,15 @@ defineProps<Props>();
     </DropdownMenuGroup>
     <DropdownMenuSeparator />
     <DropdownMenuItem :as-child="true">
-        <Link
-            class="block w-full cursor-pointer"
-            :href="logout()"
-            @click="handleLogout"
-            as="button"
-            data-test="logout-button"
+        <button
+            type="button"
+            class="flex items-center w-full px-2 py-1.5 text-sm cursor-pointer text-rose-600 hover:bg-rose-50 rounded-sm"
+            @click="isLogoutOpen = true"
         >
             <LogOut class="mr-2 h-4 w-4" />
-            Log out
-        </Link>
+            Keluar
+        </button>
     </DropdownMenuItem>
+
+    <LogoutModal :open="isLogoutOpen" @close="isLogoutOpen = false" />
 </template>

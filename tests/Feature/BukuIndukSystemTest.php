@@ -71,7 +71,6 @@ class BukuIndukSystemTest extends TestCase
 
         $this->tahun = MasterTahunPelajaran::create([
             'tahun_pelajaran' => '2025/2026',
-            'is_aktif' => true,
         ]);
 
         $this->mapelUmum = MasterMataPelajaran::create([
@@ -199,9 +198,10 @@ class BukuIndukSystemTest extends TestCase
 
         $response->assertSessionHas('success');
 
-        // Verify database records
+        // Verify database records for first Tahun Pelajaran (2025/2026)
         $this->assertDatabaseHas('nilai_akademik', [
             'siswa_id' => $this->siswa->id,
+            'tahun_pelajaran_id' => $this->tahun->id,
             'mata_pelajaran_id' => $this->mapelUmum->id,
             'semester_ke' => 1,
             'nilai_angka' => 88.0,
@@ -209,6 +209,7 @@ class BukuIndukSystemTest extends TestCase
 
         $this->assertDatabaseHas('nilai_ekstrakurikuler', [
             'siswa_id' => $this->siswa->id,
+            'tahun_pelajaran_id' => $this->tahun->id,
             'ekstrakurikuler_id' => $this->ekskul->id,
             'semester_ke' => 1,
             'nilai_predikat' => 'A',
@@ -216,11 +217,54 @@ class BukuIndukSystemTest extends TestCase
 
         $this->assertDatabaseHas('rekap_semester_siswa', [
             'siswa_id' => $this->siswa->id,
+            'tahun_pelajaran_id' => $this->tahun->id,
             'semester_ke' => 1,
             'jumlah_nilai' => 180.0,
             'nilai_rata_rata' => 90.0,
             'jumlah_absen_hari' => 3,
             'ranking' => 1,
+        ]);
+
+        // Input different grades for a DIFFERENT Tahun Pelajaran (2026/2027) on the same semester_ke = 1
+        // Verify that both Tahun Pelajaran store their own separate grades without overwriting each other!
+        $tahunBaru = MasterTahunPelajaran::create([
+            'tahun_pelajaran' => '2026/2027',
+        ]);
+
+        $response2 = $this->post("/siswa/{$this->siswa->id}/nilai-semester", [
+            'semester_ke' => 1,
+            'tahun_pelajaran_id' => $tahunBaru->id,
+            'nilai_akademik' => [
+                ['mata_pelajaran_id' => $this->mapelUmum->id, 'nilai_angka' => 95.0, 'keterangan' => 'Tuntas'],
+                ['mata_pelajaran_id' => $this->mapelKejuruan->id, 'nilai_angka' => 97.0, 'keterangan' => 'Tuntas'],
+            ],
+            'nilai_ekskul' => [
+                ['ekstrakurikuler_id' => $this->ekskul->id, 'nilai_predikat' => 'B', 'keterangan' => 'Baik'],
+            ],
+            'nilai_pkl' => '96',
+            'keterangan_pkl' => 'PT Dirgantara',
+            'ranking' => 2,
+            'sakit_hari' => 0,
+            'izin_hari' => 0,
+            'tanpa_kabar_hari' => 0,
+        ]);
+
+        $response2->assertSessionHas('success');
+
+        // 2025/2026 grade is still 88.0, and 2026/2027 grade is 95.0
+        $this->assertDatabaseHas('nilai_akademik', [
+            'siswa_id' => $this->siswa->id,
+            'tahun_pelajaran_id' => $this->tahun->id,
+            'mata_pelajaran_id' => $this->mapelUmum->id,
+            'semester_ke' => 1,
+            'nilai_angka' => 88.0,
+        ]);
+        $this->assertDatabaseHas('nilai_akademik', [
+            'siswa_id' => $this->siswa->id,
+            'tahun_pelajaran_id' => $tahunBaru->id,
+            'mata_pelajaran_id' => $this->mapelUmum->id,
+            'semester_ke' => 1,
+            'nilai_angka' => 95.0,
         ]);
     }
 
@@ -275,12 +319,19 @@ class BukuIndukSystemTest extends TestCase
     {
         $this->actingAs($this->tataUsaha);
 
-        // Create a test ZIP file containing 0081234567.jpg
+        // Create a test ZIP file containing:
+        // 1) 25261001.jpg (matches by NIS and has valid image binary!)
+        // 2) 99999999.jpg (unregistered NIS - must NOT be saved to storage and must be reported in unmatched_nis_list)
+        // 3) 25261001.pdf (wrong file extension - must be rejected and reported in invalid_file_types)
+        // 4) 25261001_palsu.jpg (fake .jpg containing plain text instead of image binary - must be rejected in invalid_file_types)
         $zipPath = tempnam(sys_get_temp_dir(), 'test_zip_') . '.zip';
         $zip = new ZipArchive();
         $zip->open($zipPath, ZipArchive::CREATE);
         $dummyImageContent = base64_decode('R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7');
-        $zip->addFromString('0081234567.jpg', $dummyImageContent);
+        $zip->addFromString('25261001.jpg', $dummyImageContent);
+        $zip->addFromString('99999999.jpg', $dummyImageContent);
+        $zip->addFromString('25261001.pdf', '%PDF-1.4 fake pdf content');
+        $zip->addFromString('25261001_palsu.jpg', 'ini bukan file gambar melainkan teks biasa');
         $zip->close();
 
         $uploadedZip = new UploadedFile($zipPath, 'pasfoto.zip', 'application/zip', null, true);
@@ -290,10 +341,33 @@ class BukuIndukSystemTest extends TestCase
         ]);
 
         $response->assertSessionHas('success');
+        $response->assertSessionHas('unmatched_nis_list');
+        $response->assertSessionHas('invalid_file_types');
 
+        $unmatchedList = session('unmatched_nis_list');
+        $this->assertCount(1, $unmatchedList);
+        $this->assertEquals('99999999', $unmatchedList[0]['identifier']);
+
+        $invalidTypeList = session('invalid_file_types');
+        $this->assertCount(2, $invalidTypeList);
+        $this->assertEquals('25261001.pdf', $invalidTypeList[0]['file']);
+        $this->assertEquals('25261001_palsu.jpg', $invalidTypeList[1]['file']);
+
+        // Verify valid student photo was saved, and invalid NIS photo was NEVER saved to storage
         $this->siswa->refresh();
         $this->assertNotNull($this->siswa->pasfoto_path);
-        $this->assertStringContainsString('0081234567', $this->siswa->pasfoto_path);
+        $firstSavedPath = $this->siswa->pasfoto_path;
+        $this->assertStringContainsString('0081234567', $firstSavedPath);
+        Storage::disk('public')->assertExists($firstSavedPath);
+        Storage::disk('public')->assertMissing('pasfoto/99999999.jpg');
+
+        // Test filtering overwrite_existing = false (skip students who already have a photo)
+        $responseSkip = $this->post('/import/zip-foto', [
+            'zip_file' => new UploadedFile($zipPath, 'pasfoto.zip', 'application/zip', null, true),
+            'overwrite_existing' => false,
+        ]);
+        $responseSkip->assertSessionHas('success');
+        $this->assertStringContainsString('dilewati karena siswa sudah memiliki pasfoto sebelumnya', session('success'));
 
         if (file_exists($zipPath)) {
             unlink($zipPath);
@@ -335,7 +409,6 @@ class BukuIndukSystemTest extends TestCase
         // 4. Tahun Pelajaran
         $respTahun = $this->post('/master-data/tahun', [
             'tahun_pelajaran' => '2026/2027',
-            'is_aktif' => false,
         ]);
         $respTahun->assertSessionHas('success');
         $this->assertDatabaseHas('master_tahun_pelajaran', ['tahun_pelajaran' => '2026/2027']);

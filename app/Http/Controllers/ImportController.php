@@ -33,10 +33,14 @@ class ImportController extends Controller
     {
         $tahunList = MasterTahunPelajaran::orderBy('tahun_pelajaran')->get();
         $jurusanList = MasterKonsentrasiKeahlian::orderBy('nama_konsentrasi')->get();
+        $siswaIdentifiers = Siswa::select('id', 'nis', 'nisn', 'nama_lengkap', 'kelas_saat_ini', 'pasfoto_path')
+            ->orderBy('nama_lengkap')
+            ->get();
 
         return Inertia::render('Import/Index', [
             'tahunList' => $tahunList,
             'jurusanList' => $jurusanList,
+            'siswaIdentifiers' => $siswaIdentifiers,
         ]);
     }
 
@@ -134,14 +138,44 @@ class ImportController extends Controller
             $col++;
         }
 
+        // Sheet 2: Referensi Kode Jurusan
+        $refSheet = $spreadsheet->createSheet();
+        $refSheet->setTitle('Referensi Kode Jurusan');
+
+        $refHeaders = ['KODE JURUSAN (Untuk Kolom kode_jurusan)', 'NAMA KONSENTRASI KEAHLIAN', 'PROGRAM KEAHLIAN'];
+        $col = 1;
+        foreach ($refHeaders as $h) {
+            $colLetter = Coordinate::stringFromColumnIndex($col);
+            $refSheet->getCell("{$colLetter}1")->setValue($h);
+            $refSheet->getColumnDimension($colLetter)->setAutoSize(true);
+            $col++;
+        }
+        $refSheet->getStyle('A1:C1')->applyFromArray($headerStyle);
+        $refSheet->getRowDimension(1)->setRowHeight(25);
+
+        $jurusans = MasterKonsentrasiKeahlian::with('programKeahlian')->orderBy('kode_singkat')->get();
+        $r = 2;
+        foreach ($jurusans as $j) {
+            $refSheet->setCellValueExplicit("A{$r}", $j->kode_singkat, DataType::TYPE_STRING);
+            $refSheet->setCellValueExplicit("B{$r}", $j->nama_konsentrasi, DataType::TYPE_STRING);
+            $refSheet->setCellValueExplicit("C{$r}", $j->programKeahlian->nama_program ?? '-', DataType::TYPE_STRING);
+            $r++;
+        }
+
+        $spreadsheet->setActiveSheetIndex(0);
+
         $response = new StreamedResponse(function () use ($spreadsheet) {
+            if (ob_get_length()) {
+                ob_end_clean();
+            }
             $writer = new Xlsx($spreadsheet);
             $writer->save('php://output');
         });
 
         $response->headers->set('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
         $response->headers->set('Content-Disposition', 'attachment; filename="template_identitas_siswa.xlsx"');
-        $response->headers->set('Cache-Control', 'max-age=0');
+        $response->headers->set('Cache-Control', 'max-age=0, must-revalidate');
+        $response->headers->set('Pragma', 'public');
 
         return $response;
     }
@@ -245,14 +279,60 @@ class ImportController extends Controller
             $col++;
         }
 
+        // Sheet 2: Panduan & Kode Mapel / Ekskul
+        $refSheet = $spreadsheet->createSheet();
+        $refSheet->setTitle('Panduan & Kode Mapel');
+
+        $refHeaders = ['KATEGORI', 'KODE HEADER KOLOM', 'NAMA MATA PELAJARAN / ATRIBUT', 'PETUNJUK PENGISIAN'];
+        $col = 1;
+        foreach ($refHeaders as $h) {
+            $colLetter = Coordinate::stringFromColumnIndex($col);
+            $refSheet->getCell("{$colLetter}1")->setValue($h);
+            $refSheet->getColumnDimension($colLetter)->setAutoSize(true);
+            $col++;
+        }
+        $refSheet->getStyle('A1:D1')->applyFromArray($headerStyle);
+        $refSheet->getRowDimension(1)->setRowHeight(25);
+
+        $refData = [];
+        $mapels = MasterMataPelajaran::orderBy('kelompok')->orderBy('nama_mapel')->get();
+        foreach ($mapels as $m) {
+            $refData[] = ['Mata Pelajaran', $m->kode_mapel, $m->nama_mapel, 'Angka bulat/desimal (0 - 100)'];
+        }
+        $ekskuls = MasterEkstrakurikuler::orderBy('nama_ekskul')->get();
+        foreach ($ekskuls as $e) {
+            $refData[] = ['Ekstrakurikuler', $e->kode_ekskul, $e->nama_ekskul, 'Predikat: A (Sangat Baik), B (Baik), C (Cukup), D (Kurang)'];
+        }
+        $refData[] = ['Praktik Kerja Lapangan', 'NILAI_PKL', 'Nilai PKL Siswa', 'Angka (contoh: 88) atau predikat'];
+        $refData[] = ['Peringkat', 'RANKING', 'Peringkat Kelas Semester Ini', 'Angka bulat (contoh: 1, 2, 3, dst)'];
+        $refData[] = ['Kehadiran', 'SAKIT_HARI', 'Jumlah Hari Sakit', 'Angka bulat (contoh: 0, 1, 2)'];
+        $refData[] = ['Kehadiran', 'IZIN_HARI', 'Jumlah Hari Izin', 'Angka bulat (contoh: 0, 1, 2)'];
+        $refData[] = ['Kehadiran', 'TANPA_KABAR_HARI', 'Jumlah Hari Alpa / Tanpa Keterangan', 'Angka bulat (contoh: 0, 1, 2)'];
+        $refData[] = ['Status Kenaikan', 'STATUS_KENAIKAN', 'Keputusan Kenaikan / Kelulusan', 'Pilihan: NAIK_TINGKAT, TINGGAL_KELAS, LULUS'];
+
+        $r = 2;
+        foreach ($refData as $item) {
+            $refSheet->setCellValueExplicit("A{$r}", $item[0], DataType::TYPE_STRING);
+            $refSheet->setCellValueExplicit("B{$r}", $item[1], DataType::TYPE_STRING);
+            $refSheet->setCellValueExplicit("C{$r}", $item[2], DataType::TYPE_STRING);
+            $refSheet->setCellValueExplicit("D{$r}", $item[3], DataType::TYPE_STRING);
+            $r++;
+        }
+
+        $spreadsheet->setActiveSheetIndex(0);
+
         $response = new StreamedResponse(function () use ($spreadsheet) {
+            if (ob_get_length()) {
+                ob_end_clean();
+            }
             $writer = new Xlsx($spreadsheet);
             $writer->save('php://output');
         });
 
         $response->headers->set('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
         $response->headers->set('Content-Disposition', 'attachment; filename="template_nilai_semester.xlsx"');
-        $response->headers->set('Cache-Control', 'max-age=0');
+        $response->headers->set('Cache-Control', 'max-age=0, must-revalidate');
+        $response->headers->set('Pragma', 'public');
 
         return $response;
     }
@@ -563,6 +643,7 @@ class ImportController extends Controller
                         $allEkskul[] = [
                             'siswa_id' => $siswaId,
                             'ekstrakurikuler_id' => $ekskulMap[$eCode],
+                            'tahun_pelajaran_id' => $tahunId,
                             'semester_ke' => $semesterKe,
                             'nilai_predikat' => $rawVal,
                             'keterangan' => null,
@@ -638,20 +719,20 @@ class ImportController extends Controller
             $successCount++;
         }
 
-        // Execute batch upserts
+        // Execute batch upserts keyed per Tahun Pelajaran & Semester
         DB::transaction(function () use ($allAkademik, $allEkskul, $allRekap) {
             foreach (array_chunk($allAkademik, 200) as $chunk) {
                 NilaiAkademik::upsert(
                     $chunk,
-                    ['siswa_id', 'mata_pelajaran_id', 'semester_ke'],
-                    ['tahun_pelajaran_id', 'nilai_angka', 'keterangan', 'updated_at']
+                    ['siswa_id', 'tahun_pelajaran_id', 'mata_pelajaran_id', 'semester_ke'],
+                    ['nilai_angka', 'keterangan', 'updated_at']
                 );
             }
 
             foreach (array_chunk($allEkskul, 200) as $chunk) {
                 NilaiEkstrakurikuler::upsert(
                     $chunk,
-                    ['siswa_id', 'ekstrakurikuler_id', 'semester_ke'],
+                    ['siswa_id', 'tahun_pelajaran_id', 'ekstrakurikuler_id', 'semester_ke'],
                     ['nilai_predikat', 'keterangan', 'updated_at']
                 );
             }
@@ -659,9 +740,8 @@ class ImportController extends Controller
             foreach (array_chunk($allRekap, 200) as $chunk) {
                 RekapSemesterSiswa::upsert(
                     $chunk,
-                    ['siswa_id', 'semester_ke'],
+                    ['siswa_id', 'tahun_pelajaran_id', 'semester_ke'],
                     [
-                        'tahun_pelajaran_id',
                         'nilai_pkl',
                         'keterangan_pkl',
                         'jumlah_nilai',
@@ -692,8 +772,10 @@ class ImportController extends Controller
     {
         $request->validate([
             'zip_file' => ['required', 'file', 'mimes:zip', 'max:51200'],
+            'overwrite_existing' => ['nullable', 'boolean'],
         ]);
 
+        $overwriteExisting = $request->boolean('overwrite_existing', true);
         $file = $request->file('zip_file');
         $zip = new ZipArchive();
 
@@ -704,59 +786,243 @@ class ImportController extends Controller
         // Ensure pasfoto directory exists
         Storage::disk('public')->makeDirectory('pasfoto');
 
-        $siswaNisnMap = Siswa::pluck('id', 'nisn')->toArray();
+        // Build lookup maps for BOTH NIS and NISN (case-insensitive trimmed)
+        $allSiswa = Siswa::select('id', 'nis', 'nisn', 'nama_lengkap', 'pasfoto_path')->get();
+        $siswaByNisn = [];
+        $siswaByNis = [];
+        foreach ($allSiswa as $s) {
+            if ($s->nisn) {
+                $siswaByNisn[strtoupper(trim($s->nisn))] = $s;
+            }
+            if ($s->nis) {
+                $siswaByNis[strtoupper(trim($s->nis))] = $s;
+            }
+        }
 
         $matchedCount = 0;
+        $replacedCount = 0;
+        $skippedExistingCount = 0;
         $unmatchedFiles = [];
+        $invalidTypeFiles = [];
         $allowedExtensions = ['jpg', 'jpeg', 'png', 'webp'];
 
         for ($i = 0; $i < $zip->numFiles; $i++) {
             $filename = $zip->getNameIndex($i);
 
-            // Skip directories and Mac OSX artifacts
-            if (str_ends_with($filename, '/') || str_contains($filename, '__MACOSX') || str_starts_with(basename($filename), '.')) {
-                continue;
-            }
-
+            // Skip directories and Mac OSX / Windows system metadata artifacts
             $basename = basename($filename);
-            $ext = strtolower(pathinfo($basename, PATHINFO_EXTENSION));
-
-            if (! in_array($ext, $allowedExtensions, true)) {
+            if (
+                str_ends_with($filename, '/') ||
+                str_contains($filename, '__MACOSX') ||
+                str_starts_with($basename, '.') ||
+                in_array(strtolower($basename), ['thumbs.db', 'desktop.ini'], true)
+            ) {
                 continue;
             }
 
-            $nisn = pathinfo($basename, PATHINFO_FILENAME);
+            $ext = strtolower(pathinfo($basename, PATHINFO_EXTENSION));
+            $identifier = trim((string) pathinfo($basename, PATHINFO_FILENAME));
 
-            if (isset($siswaNisnMap[$nisn])) {
-                $stream = $zip->getStream($filename);
-                if ($stream) {
-                    $targetPath = "pasfoto/{$nisn}.{$ext}";
-                    Storage::disk('public')->put($targetPath, stream_get_contents($stream));
-                    fclose($stream);
+            // 1. Check if file extension is an allowed photo format
+            if (! in_array($ext, $allowedExtensions, true)) {
+                $extLabel = $ext !== '' ? ".{$ext}" : 'Tanpa Ekstensi';
+                $invalidTypeFiles[] = [
+                    'file' => $basename,
+                    'identifier' => $identifier ?: '-',
+                    'ext' => strtoupper($extLabel),
+                    'message' => "Tipe file '{$extLabel}' pada berkas '{$basename}' keliru/tidak didukung. Gunakan format foto JPG, JPEG, PNG, atau WEBP.",
+                ];
 
-                    Siswa::where('id', $siswaNisnMap[$nisn])->update([
-                        'pasfoto_path' => $targetPath,
-                    ]);
-                    $matchedCount++;
+                continue;
+            }
+
+            // 2. Read stream and verify actual image binary signature / content
+            $stream = $zip->getStream($filename);
+            if (! $stream) {
+                $invalidTypeFiles[] = [
+                    'file' => $basename,
+                    'identifier' => $identifier ?: '-',
+                    'ext' => strtoupper(".{$ext}"),
+                    'message' => "Berkas '{$basename}' tidak dapat dibaca atau rusak di dalam arsip ZIP.",
+                ];
+
+                continue;
+            }
+
+            $rawContents = stream_get_contents($stream);
+            fclose($stream);
+
+            if ($rawContents === false || strlen($rawContents) === 0 || ! $this->isValidImageBinary($rawContents)) {
+                $invalidTypeFiles[] = [
+                    'file' => $basename,
+                    'identifier' => $identifier ?: '-',
+                    'ext' => strtoupper(".{$ext}") . ' (Bukan Gambar Valid)',
+                    'message' => "Isi berkas '{$basename}' keliru atau bukan file gambar yang valid (rusak/format palsu).",
+                ];
+
+                continue;
+            }
+
+            // 3. Match identifier against NIS or NISN
+            $lookupKey = strtoupper($identifier);
+            $matchedSiswa = $siswaByNisn[$lookupKey] ?? $siswaByNis[$lookupKey] ?? null;
+
+            if ($matchedSiswa) {
+                $hasExistingPhoto = ! empty($matchedSiswa->pasfoto_path);
+
+                // If user chose NOT to overwrite existing photos and student already has a photo, skip it
+                if ($hasExistingPhoto && ! $overwriteExisting) {
+                    $skippedExistingCount++;
+
+                    continue;
+                }
+
+                // Compress & resize image on server (fallback if not already compressed)
+                [$finalBinary, $finalExt] = $this->compressPasfotoBinary($rawContents, $ext);
+
+                $fileKey = $matchedSiswa->nisn ?: $matchedSiswa->nis;
+                $targetPath = "pasfoto/{$fileKey}.{$finalExt}";
+
+                // Remove old photo if path was different so orphan files do not accumulate
+                if ($hasExistingPhoto && $matchedSiswa->pasfoto_path !== $targetPath && Storage::disk('public')->exists($matchedSiswa->pasfoto_path)) {
+                    Storage::disk('public')->delete($matchedSiswa->pasfoto_path);
+                }
+
+                Storage::disk('public')->put($targetPath, $finalBinary);
+
+                $matchedSiswa->update([
+                    'pasfoto_path' => $targetPath,
+                ]);
+                $matchedCount++;
+                if ($hasExistingPhoto) {
+                    $replacedCount++;
                 }
             } else {
+                // NEVER save unregistered photos to storage; record them for the modal notification
                 $unmatchedFiles[] = [
                     'file' => $basename,
-                    'nisn' => $nisn,
-                    'message' => "Tidak ada siswa dengan NISN {$nisn}",
+                    'identifier' => $identifier,
+                    'nisn' => $identifier,
+                    'message' => "NIS / NISN '{$identifier}' (berkas: {$basename}) tidak terdaftar di data siswa.",
                 ];
             }
         }
 
         $zip->close();
 
-        $msg = "Upload ZIP selesai. {$matchedCount} pasfoto siswa berhasil dipasangkan.";
+        $msg = "Upload ZIP selesai. {$matchedCount} pasfoto siswa berhasil dikompres dan dipasangkan";
+        if ($replacedCount > 0) {
+            $msg .= " ({$replacedCount} foto lama digantikan)";
+        }
+        $msg .= '.';
+
+        if ($skippedExistingCount > 0) {
+            $msg .= " {$skippedExistingCount} foto dilewati karena siswa sudah memiliki pasfoto sebelumnya.";
+        }
+        if (count($invalidTypeFiles) > 0) {
+            $msg .= ' ' . count($invalidTypeFiles) . ' berkas ditolak karena tipe file keliru.';
+        }
         if (count($unmatchedFiles) > 0) {
-            $msg .= ' ' . count($unmatchedFiles) . ' file tidak cocok dengan NISN siswa mana pun.';
+            $msg .= ' ' . count($unmatchedFiles) . ' foto diabaikan karena NIS/NISN tidak terdaftar.';
         }
 
         return redirect()->back()
             ->with('success', $msg)
-            ->with('import_errors', $unmatchedFiles);
+            ->with('import_errors', array_merge($invalidTypeFiles, $unmatchedFiles))
+            ->with('unmatched_nis_list', $unmatchedFiles)
+            ->with('invalid_file_types', $invalidTypeFiles);
+    }
+
+    /**
+     * Checks whether raw binary bytes represent a valid image (JPEG, PNG, WEBP, GIF).
+     */
+    private function isValidImageBinary(string $bytes): bool
+    {
+        if (strlen($bytes) < 4) {
+            return false;
+        }
+
+        // Check standard magic bytes: JPEG (\xFF\xD8\xFF), PNG (\x89PNG), GIF (GIF8), WEBP (RIFF....WEBP)
+        if (
+            str_starts_with($bytes, "\xFF\xD8\xFF") ||
+            str_starts_with($bytes, "\x89PNG") ||
+            str_starts_with($bytes, 'GIF8') ||
+            (strlen($bytes) >= 12 && str_starts_with($bytes, 'RIFF') && substr($bytes, 8, 4) === 'WEBP')
+        ) {
+            return true;
+        }
+
+        if (function_exists('imagecreatefromstring')) {
+            $img = @imagecreatefromstring($bytes);
+            if ($img !== false) {
+                imagedestroy($img);
+
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Compresses and resizes a pasfoto binary to max 450x600px (3x4 ratio) at 80% JPEG quality using PHP GD.
+     *
+     * @return array{0: string, 1: string}
+     */
+    private function compressPasfotoBinary(string $rawBinary, string $originalExt): array
+    {
+        if (! function_exists('imagecreatefromstring') || strlen($rawBinary) < 120) {
+            return [$rawBinary, $originalExt];
+        }
+
+        $srcImg = @imagecreatefromstring($rawBinary);
+        if (! $srcImg) {
+            return [$rawBinary, $originalExt];
+        }
+
+        $srcW = imagesx($srcImg);
+        $srcH = imagesy($srcImg);
+
+        if ($srcW <= 4 || $srcH <= 4) {
+            imagedestroy($srcImg);
+
+            return [$rawBinary, $originalExt];
+        }
+
+        $maxW = 450;
+        $maxH = 600;
+        $targetW = $srcW;
+        $targetH = $srcH;
+
+        if ($srcW > $maxW || $srcH > $maxH) {
+            $ratio = min($maxW / $srcW, $maxH / $srcH);
+            $targetW = max(1, (int) round($srcW * $ratio));
+            $targetH = max(1, (int) round($srcH * $ratio));
+        }
+
+        $dstImg = imagecreatetruecolor($targetW, $targetH);
+        if (! $dstImg) {
+            imagedestroy($srcImg);
+
+            return [$rawBinary, $originalExt];
+        }
+
+        // Fill white background for transparent PNG/WebP
+        $white = imagecolorallocate($dstImg, 255, 255, 255);
+        imagefilledrectangle($dstImg, 0, 0, $targetW, $targetH, $white);
+        imagecopyresampled($dstImg, $srcImg, 0, 0, 0, 0, $targetW, $targetH, $srcW, $srcH);
+
+        ob_start();
+        imagejpeg($dstImg, null, 80);
+        $compressedBinary = ob_get_clean();
+
+        imagedestroy($srcImg);
+        imagedestroy($dstImg);
+
+        if ($compressedBinary && strlen($compressedBinary) > 0 && (strlen($compressedBinary) < strlen($rawBinary) || $srcW > $maxW || $srcH > $maxH)) {
+            return [$compressedBinary, 'jpg'];
+        }
+
+        return [$rawBinary, $originalExt];
     }
 }

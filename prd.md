@@ -2,70 +2,70 @@ Product Requirements Document (PRD)
 Sistem Informasi Buku Induk Siswa (E-Buku Induk SMK)
 
 1. Gambaran Umum Proyek (Project Overview)
-   Aplikasi Buku Induk Siswa adalah sistem informasi manajemen akademik berbasis web yang dirancang untuk mendigitalkan dokumen fisik "HASIL PRESTASI PENILAIAN" (Buku Induk Siswa SMK). Sistem ini mendukung pencatatan siklus hidup data siswa mulai dari diterima, nilai akademik per semester (Semester I s.d. X), Praktik Kerja Lapangan (PKL), ekstrakurikuler, rekap absensi, status kenaikan tingkat, hingga kelulusan/tamat atau pindah sekolah.
-   Sistem dirancang khusus agar mampu menangani input data massal (>600 siswa sekaligus) melalui fitur Import Excel dan Upload ZIP Pasfoto dengan cepat tanpa membebani server (anti-timeout).
+Aplikasi Buku Induk Siswa adalah sistem informasi manajemen akademik berbasis web yang dirancang untuk mendigitalkan dokumen fisik "HASIL PRESTASI PENILAIAN" (Buku Induk Siswa SMK). Sistem ini mendukung pencatatan siklus hidup data siswa mulai dari diterima, nilai akademik per semester (Semester I s.d. X), Praktik Kerja Lapangan (PKL), ekstrakurikuler, rekap absensi, status kenaikan tingkat, hingga kelulusan/tamat atau pindah sekolah.
+Sistem dirancang khusus agar mampu menangani input data massal (>600 siswa sekaligus) melalui fitur Import Excel dan Upload ZIP Pasfoto dengan cepat tanpa membebani server (anti-timeout).
 
 2. Spesifikasi Teknis (Tech Stack)
-   Backend Framework: Laravel (menggunakan Starter Kit Vue.js & Laravel Authentication bawaan).
-   Frontend Framework: Vue.js 3 (Composition API) + Inertia.js.
-   UI & Styling: Tailwind CSS.
-   Library Pendukung (Backend):
-   maatwebsite/excel (Laravel Excel) untuk proses Batch Import & Chunk Reading.
-   spatie/laravel-permission atau kolom role langsung pada tabel users (admin, tata_usaha).
-   barryvdh/laravel-dompdf atau CSS @media print khusus ukuran kertas F4/A3 Landscape.
+Backend Framework: Laravel (menggunakan Starter Kit Vue.js & Laravel Authentication bawaan).
+Frontend Framework: Vue.js 3 (Composition API) + Inertia.js.
+UI & Styling: Tailwind CSS.
+Library Pendukung (Backend):
+maatwebsite/excel (Laravel Excel) untuk proses Batch Import & Chunk Reading.
+spatie/laravel-permission atau kolom role langsung pada tabel users (admin, tata_usaha).
+barryvdh/laravel-dompdf atau CSS @media print khusus ukuran kertas F4/A3 Landscape.
 
 3. Sistem Desain & Tema Visual (UI/UX Guidelines)
-   Aplikasi menggunakan tema warna Putih dan Biru (Clean Corporate Academic) agar tampilan tabel matriks yang padat tetap nyaman dilihat di layar.
-   Palet Warna (Tailwind CSS Classes)
-   Background Utama: Putih Bersih (bg-white) dan Abu-abu Sangat Muda (bg-slate-50) untuk area kerja.
-   Warna Primer (Biru Tua / Navy): bg-blue-900 dan text-blue-950 untuk Sidebar navigasi, Header Tabel Utama, dan judul halaman.
-   Warna Aksen / Interaktif (Biru Cerah): bg-blue-600 (Hover: hover:bg-blue-700) untuk tombol aksi utama (Primary Button), tab aktif, dan progress bar.
-   Warna Sekunder (Biru Muda): bg-sky-50, bg-blue-50, dan border-blue-200 untuk sub-header kelompok mata pelajaran, badge informasi, serta efek hover pada baris tabel.
-   Warna Status Indikator:
-   Sukses / Naik Tingkat / Aktif: bg-emerald-100 text-emerald-800
-   Peringatan / Izin / Sakit: bg-amber-100 text-amber-800
-   Bahaya / Tidak Naik / Keluar: bg-rose-100 text-rose-800
-   Tipografi & Tata Letak
-   Font: Inter atau Plus Jakarta Sans.
-   Tabel Matriks Padat (Compact Table): Menggunakan ukuran teks text-xs pada sel nilai semester dengan padding rapat (px-2 py-1.5) agar seluruh kolom Semester I hingga X dapat terlihat proporsional dalam satu tampilan layar maupun saat dicetak.
+Aplikasi menggunakan tema warna Putih dan Biru (Clean Corporate Academic) agar tampilan tabel matriks yang padat tetap nyaman dilihat di layar.
+Palet Warna (Tailwind CSS Classes)
+Background Utama: Putih Bersih (bg-white) dan Abu-abu Sangat Muda (bg-slate-50) untuk area kerja.
+Warna Primer (Biru Tua / Navy): bg-blue-900 dan text-blue-950 untuk Sidebar navigasi, Header Tabel Utama, dan judul halaman.
+Warna Aksen / Interaktif (Biru Cerah): bg-blue-600 (Hover: hover:bg-blue-700) untuk tombol aksi utama (Primary Button), tab aktif, dan progress bar.
+Warna Sekunder (Biru Muda): bg-sky-50, bg-blue-50, dan border-blue-200 untuk sub-header kelompok mata pelajaran, badge informasi, serta efek hover pada baris tabel.
+Warna Status Indikator:
+Sukses / Naik Tingkat / Aktif: bg-emerald-100 text-emerald-800
+Peringatan / Izin / Sakit: bg-amber-100 text-amber-800
+Bahaya / Tidak Naik / Keluar: bg-rose-100 text-rose-800
+Tipografi & Tata Letak
+Font: Inter atau Plus Jakarta Sans.
+Tabel Matriks Padat (Compact Table): Menggunakan ukuran teks text-xs pada sel nilai semester dengan padding rapat (px-2 py-1.5) agar seluruh kolom Semester I hingga X dapat terlihat proporsional dalam satu tampilan layar maupun saat dicetak.
 
 4. Manajemen Role & Hak Akses Pengguna
-   Sistem membatasi akses menjadi 2 Role Utama:
-   Fitur / Modul
-   Admin (admin)
-   Tata Usaha (tata_usaha)
-   Login & Pengaturan Profil
-   Ya
-   Ya
-   Dashboard Statistik Akademik
-   Ya
-   Ya
-   Manajemen Akun Pengguna (CRUD User)
-   Ya
-   Tidak
-   Manajemen Data Master (Jurusan, Mapel, Tahun, Ekskul)
-   Ya
-   Hanya Lihat
-   Direktori & Pencarian Siswa
-   Ya
-   Ya
-   Input & Edit Biodata / Nilai Siswa (Manual)
-   Ya
-   Ya
-   Import Massal via Excel (Identitas & Nilai)
-   Ya
-   Ya
-   Upload Massal Pasfoto via ZIP
-   Ya
-   Ya
-   Lihat & Cetak Lembar Buku Induk Siswa
-   Ya
-   Ya
+Sistem membatasi akses menjadi 2 Role Utama:
+Fitur / Modul
+Admin (admin)
+Tata Usaha (tata_usaha)
+Login & Pengaturan Profil
+Ya
+Ya
+Dashboard Statistik Akademik
+Ya
+Ya
+Manajemen Akun Pengguna (CRUD User)
+Ya
+Tidak
+Manajemen Data Master (Jurusan, Mapel, Tahun, Ekskul)
+Ya
+Hanya Lihat
+Direktori & Pencarian Siswa
+Ya
+Ya
+Input & Edit Biodata / Nilai Siswa (Manual)
+Ya
+Ya
+Import Massal via Excel (Identitas & Nilai)
+Ya
+Ya
+Upload Massal Pasfoto via ZIP
+Ya
+Ya
+Lihat & Cetak Lembar Buku Induk Siswa
+Ya
+Ya
+
 
 5. Rancangan Struktur Database (Database Schema)
-   Berikut adalah rancangan tabel beserta kode migration Laravel yang siap dieksekusi:
-   5.1. Skema Tabel Master & Utama (Laravel Migration)
-
+Berikut adalah rancangan tabel beserta kode migration Laravel yang siap dieksekusi:
+5.1. Skema Tabel Master & Utama (Laravel Migration)
 <?php
 
 use Illuminate\Database\Migrations\Migration;
