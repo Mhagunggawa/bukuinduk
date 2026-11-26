@@ -8,7 +8,6 @@ import BaseButton from '@/components/base/BaseButton.vue';
 import BaseBadge from '@/components/base/BaseBadge.vue';
 import InputError from '@/components/InputError.vue';
 import { edit } from '@/routes/profile';
-import { send } from '@/routes/verification';
 
 defineOptions({
     layout: {

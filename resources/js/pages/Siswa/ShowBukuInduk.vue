@@ -3,6 +3,7 @@ import { computed, ref } from 'vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import {
     ArrowLeft,
+    Download,
     Printer,
     Edit3,
     BookOpen,
@@ -126,6 +127,16 @@ const props = defineProps<{
     tahunList: TahunPelajaran[];
     jurusanList: any[];
 }>();
+
+// Download PDF Action (Hanya bagian HASIL PRESTASI PENILAIAN ukuran F4 Landscape)
+const pdfDownloadUrl = computed(() => {
+    const slotsParam = slotTahunIds.value.join(',');
+    return `/siswa/${props.siswa.id}/buku-induk/pdf?slots=${encodeURIComponent(slotsParam)}`;
+});
+
+const handleDownloadPdf = () => {
+    window.location.href = pdfDownloadUrl.value;
+};
 
 // Print Action
 const handlePrint = () => {
@@ -422,14 +433,24 @@ const submitNilaiForm = () => {
                         Input / Edit Nilai Semester
                     </BaseButton>
 
-                    <!-- Tombol Cetak Buku Induk (PDF / Print) -->
+                    <!-- Tombol Cetak Langsung -->
                     <BaseButton
-                        variant="primary"
+                        variant="secondary"
                         size="sm"
                         @click="handlePrint"
                     >
-                        <Printer class="w-4 h-4 mr-1.5" />
-                        Cetak Buku Induk (F4/A3)
+                        <Printer class="w-4 h-4 mr-1.5 text-[#64748B]" />
+                        Cetak
+                    </BaseButton>
+
+                    <!-- Tombol Download PDF Khusus Bagian Hasil Prestasi Penilaian -->
+                    <BaseButton
+                        variant="primary"
+                        size="sm"
+                        @click="handleDownloadPdf"
+                    >
+                        <Download class="w-4 h-4 mr-1.5" />
+                        Download PDF
                     </BaseButton>
                 </div>
             </div>

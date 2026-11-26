@@ -18,6 +18,7 @@ Route::middleware(['auth'])->group(function () {
     // Direktori & Buku Induk Siswa (Admin & Tata Usaha)
     Route::resource('siswa', SiswaController::class)->except(['create', 'edit', 'show']);
     Route::get('/siswa/{siswa}/buku-induk', [SiswaController::class, 'showBukuInduk'])->name('siswa.buku-induk');
+    Route::get('/siswa/{siswa}/buku-induk/pdf', [SiswaController::class, 'downloadBukuIndukPdf'])->name('siswa.buku-induk.pdf');
     Route::post('/siswa/{siswa}/nilai-semester', [SiswaController::class, 'updateNilaiSemester'])->name('siswa.nilai-semester.update');
 
     // Import Massal & ZIP Pasfoto (Admin & Tata Usaha)

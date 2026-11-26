@@ -10,13 +10,16 @@ use App\Models\NilaiAkademik;
 use App\Models\NilaiEkstrakurikuler;
 use App\Models\RekapSemesterSiswa;
 use App\Models\Siswa;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\Response as SymfonyResponse;
 
 class SiswaController extends Controller
 {
@@ -191,6 +194,168 @@ class SiswaController extends Controller
             'tahunList' => $tahunList,
             'jurusanList' => $jurusanList,
         ]);
+    }
+
+    public function downloadBukuIndukPdf(Request $request, Siswa $siswa): SymfonyResponse
+    {
+        $siswa->load([
+            'konsentrasiKeahlian.programKeahlian.bidangStudi',
+            'nilaiAkademik.mataPelajaran',
+            'nilaiAkademik.tahunPelajaran',
+            'nilaiEkstrakurikuler.ekstrakurikuler',
+            'nilaiEkstrakurikuler.tahunPelajaran',
+            'rekapSemester.tahunPelajaran',
+        ]);
+
+        $mapelUmum = MasterMataPelajaran::where('kelompok', 'A_UMUM')
+            ->orderBy('no_urut')
+            ->get();
+
+        $mapelKejuruan = MasterMataPelajaran::where('kelompok', 'B_KEJURUAN')
+            ->orderBy('no_urut')
+            ->get();
+
+        $ekskulList = MasterEkstrakurikuler::orderBy('no_urut')->get();
+        $tahunList = MasterTahunPelajaran::orderBy('tahun_pelajaran', 'asc')->get()->values();
+
+        // Determine the 5 slot Tahun Pelajaran IDs (from query param ?slots=id1,id2,... or auto-resolved)
+        $requestedSlots = $request->filled('slots')
+            ? explode(',', (string) $request->query('slots'))
+            : [];
+
+        $baseTahunIdx = 0;
+        if ($siswa->diterima_tanggal && $tahunList->count() > 0) {
+            $entryYear = substr((string) $siswa->diterima_tanggal, 0, 4);
+            $foundIdx = $tahunList->search(fn ($t) => str_starts_with($t->tahun_pelajaran, $entryYear));
+            if ($foundIdx !== false) {
+                $baseTahunIdx = (int) $foundIdx;
+            }
+        }
+
+        $slotTahunIds = [];
+        for ($gIdx = 0; $gIdx < 5; $gIdx++) {
+            if (! empty($requestedSlots[$gIdx]) && is_numeric($requestedSlots[$gIdx])) {
+                $slotTahunIds[$gIdx] = (int) $requestedSlots[$gIdx];
+
+                continue;
+            }
+
+            $semOdd = $gIdx * 2 + 1;
+            $semEven = $semOdd + 1;
+
+            $existingRekap = $siswa->rekapSemester->first(
+                fn ($r) => ($r->semester_ke === $semOdd || $r->semester_ke === $semEven) && $r->tahun_pelajaran_id
+            );
+            $existingAkademik = $siswa->nilaiAkademik->first(
+                fn ($a) => ($a->semester_ke === $semOdd || $a->semester_ke === $semEven) && $a->tahun_pelajaran_id
+            );
+
+            if ($existingRekap?->tahun_pelajaran_id) {
+                $slotTahunIds[$gIdx] = (int) $existingRekap->tahun_pelajaran_id;
+            } elseif ($existingAkademik?->tahun_pelajaran_id) {
+                $slotTahunIds[$gIdx] = (int) $existingAkademik->tahun_pelajaran_id;
+            } elseif (isset($tahunList[$baseTahunIdx + $gIdx])) {
+                $slotTahunIds[$gIdx] = (int) $tahunList[$baseTahunIdx + $gIdx]->id;
+            } elseif (isset($tahunList[$gIdx])) {
+                $slotTahunIds[$gIdx] = (int) $tahunList[$gIdx]->id;
+            } elseif (isset($tahunList[0])) {
+                $slotTahunIds[$gIdx] = (int) $tahunList[0]->id;
+            } else {
+                $slotTahunIds[$gIdx] = null;
+            }
+        }
+
+        // Build gradeYears labels for the 5 slots
+        $baseYear = $siswa->diterima_tanggal ? (int) substr((string) $siswa->diterima_tanggal, 0, 4) : 2024;
+        if ($baseYear < 1990) {
+            $baseYear = 2024;
+        }
+        $gradeYears = [];
+        for ($gIdx = 0; $gIdx < 5; $gIdx++) {
+            $tpId = $slotTahunIds[$gIdx];
+            $foundTp = $tpId ? $tahunList->firstWhere('id', $tpId) : null;
+            $gradeYears[$gIdx] = $foundTp ? $foundTp->tahun_pelajaran : ($baseYear + $gIdx) . '/' . ($baseYear + $gIdx + 1);
+        }
+
+        // Build lookup maps keyed by selected slot Tahun Pelajaran + Semester
+        $academicMap = [];
+        foreach ($siswa->nilaiAkademik as $na) {
+            $slotIdx = intdiv($na->semester_ke - 1, 2);
+            if ($na->tahun_pelajaran_id && isset($slotTahunIds[$slotIdx]) && (int) $na->tahun_pelajaran_id === (int) $slotTahunIds[$slotIdx]) {
+                $academicMap["{$na->mata_pelajaran_id}_{$na->semester_ke}"] = $na->nilai_angka;
+            }
+        }
+
+        $ekskulMap = [];
+        foreach ($siswa->nilaiEkstrakurikuler as $ne) {
+            $slotIdx = intdiv($ne->semester_ke - 1, 2);
+            if ($ne->tahun_pelajaran_id && isset($slotTahunIds[$slotIdx]) && (int) $ne->tahun_pelajaran_id === (int) $slotTahunIds[$slotIdx]) {
+                $ekskulMap["{$ne->ekstrakurikuler_id}_{$ne->semester_ke}"] = $ne->nilai_predikat;
+            }
+        }
+
+        $rekapMap = [];
+        foreach ($siswa->rekapSemester as $rs) {
+            $slotIdx = intdiv($rs->semester_ke - 1, 2);
+            if ($rs->tahun_pelajaran_id && isset($slotTahunIds[$slotIdx]) && (int) $rs->tahun_pelajaran_id === (int) $slotTahunIds[$slotIdx]) {
+                $rekapMap[$rs->semester_ke] = $rs;
+            }
+        }
+
+        // Format dates in Indonesian
+        $formatIdDate = function ($dateVal): string {
+            if (! $dateVal) {
+                return '-';
+            }
+            try {
+                return Carbon::parse($dateVal)->locale('id')->translatedFormat('j F Y');
+            } catch (\Throwable) {
+                return (string) $dateVal;
+            }
+        };
+
+        $formattedDates = [
+            'tanggal_lahir' => $formatIdDate($siswa->tanggal_lahir),
+            'diterima_tanggal' => $formatIdDate($siswa->diterima_tanggal),
+            'diterima_tanggal_sttb' => $formatIdDate($siswa->diterima_tanggal_sttb),
+            'keluar_tanggal' => $formatIdDate($siswa->keluar_tanggal),
+            'tamat_tanggal_sttb' => $formatIdDate($siswa->tamat_tanggal_sttb),
+        ];
+
+        // Embed Pasfoto as Base64 Data URI if present
+        $pasfotoBase64 = null;
+        if ($siswa->pasfoto_path && Storage::disk('public')->exists($siswa->pasfoto_path)) {
+            $rawImg = Storage::disk('public')->get($siswa->pasfoto_path);
+            if ($rawImg) {
+                $ext = strtolower(pathinfo($siswa->pasfoto_path, PATHINFO_EXTENSION));
+                $mime = match ($ext) {
+                    'png' => 'image/png',
+                    'webp' => 'image/webp',
+                    'gif' => 'image/gif',
+                    default => 'image/jpeg',
+                };
+                $pasfotoBase64 = 'data:' . $mime . ';base64,' . base64_encode($rawImg);
+            }
+        }
+
+        // Paper size F4 / Folio Landscape: 330mm x 215mm = 935.43pt x 609.45pt
+        $pdf = Pdf::loadView('pdf.buku-induk', [
+            'siswa' => $siswa,
+            'mapelUmum' => $mapelUmum,
+            'mapelKejuruan' => $mapelKejuruan,
+            'ekskulList' => $ekskulList,
+            'gradeYears' => $gradeYears,
+            'academicMap' => $academicMap,
+            'ekskulMap' => $ekskulMap,
+            'rekapMap' => $rekapMap,
+            'formattedDates' => $formattedDates,
+            'pasfotoBase64' => $pasfotoBase64,
+        ])->setPaper([0, 0, 935.43, 609.45]);
+
+        $cleanName = preg_replace('/[^A-Za-z0-9_-]/', '_', strtoupper($siswa->nama_lengkap));
+        $filename = "Buku_Induk_{$siswa->nis}_{$cleanName}.pdf";
+
+        return $pdf->download($filename);
     }
 
     public function updateNilaiSemester(Request $request, Siswa $siswa): RedirectResponse

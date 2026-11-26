@@ -223,7 +223,7 @@ const activePageTitle = computed(() => {
 </script>
 
 <template>
-    <div class="fixed inset-0 overflow-hidden bg-[#F8FAFC] font-sans text-[#0F3A5F] flex flex-col md:flex-row antialiased">
+    <div class="fixed inset-0 overflow-hidden print:static print:inset-auto print:overflow-visible print:bg-white bg-[#F8FAFC] font-sans text-[#0F3A5F] flex flex-col md:flex-row antialiased">
         <!-- AppSidebar Component -->
         <AppSidebar
             :open="isSidebarOpen"
@@ -233,9 +233,9 @@ const activePageTitle = computed(() => {
         />
 
         <!-- Right Main Viewport -->
-        <div class="flex-1 flex flex-col min-w-0 h-full overflow-hidden bg-[#F8FAFC]">
-            <!-- Topbar / Navbar (Terkunci di Posisi Atas, Tidak Pernah Bergulir) -->
-            <header class="h-16 bg-white border-b border-[#E2E8F0] px-4 sm:px-6 flex items-center justify-between shrink-0 z-30">
+        <div class="flex-1 flex flex-col min-w-0 h-full overflow-hidden print:h-auto print:overflow-visible bg-[#F8FAFC] print:bg-white">
+            <!-- Topbar / Navbar (Terkunci di Posisi Atas, Disembunyikan saat Print) -->
+            <header class="h-16 bg-white border-b border-[#E2E8F0] px-4 sm:px-6 flex items-center justify-between shrink-0 z-30 print:hidden">
                 <div class="flex items-center gap-3.5 min-w-0">
                     <!-- Tombol Buka Menu (Mobile) -->
                     <button
@@ -411,7 +411,7 @@ const activePageTitle = computed(() => {
             </header>
 
             <!-- Page Main Body (Satu-satunya area yang bergulir saat modul panjang) -->
-            <main class="flex-1 min-h-0 p-4 sm:p-6 overflow-y-auto">
+            <main class="flex-1 min-h-0 p-4 sm:p-6 overflow-y-auto print:p-0 print:overflow-visible">
                 <slot />
             </main>
         </div>

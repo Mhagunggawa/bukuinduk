@@ -279,6 +279,13 @@ class BukuIndukSystemTest extends TestCase
         $respNilai = $this->get('/import/template-nilai');
         $respNilai->assertOk();
         $this->assertStringContainsString('template_nilai_semester.xlsx', $respNilai->headers->get('content-disposition'));
+
+        // Test Download PDF Buku Induk (Hanya bagian Hasil Prestasi Penilaian)
+        $respPdf = $this->get("/siswa/{$this->siswa->id}/buku-induk/pdf");
+        $respPdf->assertOk();
+        $this->assertEquals('application/pdf', $respPdf->headers->get('content-type'));
+        $this->assertStringContainsString('Buku_Induk_25261001_BUDI_SANTOSO.pdf', (string) $respPdf->headers->get('content-disposition'));
+        $this->assertStringStartsWith('%PDF-', $respPdf->getContent());
     }
 
     public function test_import_identitas_excel(): void
